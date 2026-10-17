@@ -1,7 +1,7 @@
 import { encodeWav } from './wav.ts';
 
 export interface Playback {
-  /** Resolves when playback ends or is stopped. */
+  /** Resolves when playback ends or is stopped; rejects if the browser refused to play. */
   done: Promise<void>;
   stop(): void;
 }
@@ -17,14 +17,24 @@ export function playSamples(samples: Float32Array, rate: number, volume = 1): Pl
   audio.volume = Math.max(0, Math.min(1, volume));
 
   let finish!: () => void;
-  const done = new Promise<void>((resolve) => (finish = resolve));
+  let fail!: (reason: Error) => void;
+  const done = new Promise<void>((resolve, reject) => {
+    finish = resolve;
+    fail = reject;
+  });
   const cleanup = () => {
     URL.revokeObjectURL(url);
     finish();
   };
   audio.addEventListener('ended', cleanup, { once: true });
-  audio.addEventListener('error', cleanup, { once: true });
-  audio.play().catch(cleanup);
+  audio.addEventListener('error', () => {
+    URL.revokeObjectURL(url);
+    fail(new Error('The browser could not play the audio.'));
+  }, { once: true });
+  audio.play().catch((error: Error) => {
+    URL.revokeObjectURL(url);
+    fail(new Error(`Playback was blocked: ${error.message}`));
+  });
 
   return {
     done,

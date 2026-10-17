@@ -56,7 +56,10 @@ text.addEventListener('input', () => {
 
 async function runSend(): Promise<void> {
   const p = prepare();
-  if (!p) return;
+  if (!p) {
+    sendStatus.textContent = text.value.trim() === '' ? 'Type a message first.' : hint.textContent;
+    return;
+  }
   sending = true;
   sendBtn.textContent = 'Stop';
   sendStatus.textContent = 'Playing. Hold the speaker near the other device and turn the volume up.';
@@ -66,11 +69,13 @@ async function runSend(): Promise<void> {
       await playback.done;
       if (sending && loop.checked) await new Promise((r) => setTimeout(r, 500));
     } while (sending && loop.checked);
+    sendStatus.textContent = 'Sent.';
+  } catch (error) {
+    sendStatus.textContent = (error as Error).message;
   } finally {
     sending = false;
     playback = null;
     sendBtn.textContent = 'Send as sound';
-    sendStatus.textContent = '';
   }
 }
 
@@ -81,6 +86,13 @@ sendBtn.addEventListener('click', () => {
     return;
   }
   void runSend();
+});
+
+$('beepBtn').addEventListener('click', () => {
+  const beep = new Float32Array(SEND_RATE);
+  for (let i = 0; i < beep.length; i++) beep[i] = 0.5 * Math.sin((2 * Math.PI * 2500 * i) / SEND_RATE);
+  sendStatus.textContent = 'Playing a 1 second beep at 2.5 kHz. If you cannot hear it, the speaker path is the problem.';
+  playSamples(beep, SEND_RATE).done.catch((error: Error) => (sendStatus.textContent = error.message));
 });
 
 // ---- receive ----
@@ -97,7 +109,6 @@ function handle(events: ReceiverEvent[]): void {
     if (event.kind === 'progress' && event.progress.received < event.progress.total) {
       recvStatus.textContent = `Receiving: ${event.progress.received} of ${event.progress.total} bursts`;
     } else if (event.kind === 'message') {
-      recvStatus.textContent = 'Listening.';
       const li = document.createElement('li');
       const body = document.createElement('p');
       body.textContent = event.text;
@@ -105,6 +116,10 @@ function handle(events: ReceiverEvent[]): void {
       meta.textContent = `${new Date().toLocaleTimeString()} · ${event.dictionary ? 'dictionary' : 'text'}`;
       li.append(body, meta);
       inbox.prepend(li);
+      // One message per listen: stop the microphone as soon as it has arrived.
+      stopListening();
+      recvStatus.textContent = 'Message received. Tap Start listening for another.';
+      return;
     }
   }
 }
