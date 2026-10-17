@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#4b4a4a" />
+    <link rel="icon" href="/icon-192.png" />
+    <title>Whoosh Design System</title>
+  </head>
+  <body class="ds">
+    <main class="ds-page">
+      <!-- row 1 -->
+      <div class="ds-row">
+        <header class="ds-intro" style="flex: 335">
+          <span class="ds-rule"></span>
+          <h1>UI Design System</h1>
+          <p>UI kit &nbsp;/&nbsp; components &nbsp;/&nbsp; tokens</p>
+        </header>
+        <section class="panel panel-screws" style="flex: 597">
+          <h2 class="eyebrow">Color tokens</h2>
+          <div class="swatches">
+            <figure><i style="background: var(--gray-900)"></i><figcaption>Gray 900<br />#0F0F0F</figcaption></figure>
+            <figure><i style="background: var(--gray-800)"></i><figcaption>Gray 800<br />#1A1A1A</figcaption></figure>
+            <figure><i style="background: var(--gray-700)"></i><figcaption>Gray 700<br />#2A2A2A</figcaption></figure>
+            <figure><i style="background: var(--gray-600)"></i><figcaption>Gray 600<br />#3B3B3B</figcaption></figure>
+            <figure><i style="background: var(--gray-400)"></i><figcaption>Gray 400<br />#7A7A7A</figcaption></figure>
+            <figure><i style="background: var(--gray-200)"></i><figcaption>Gray 200<br />#C7C7C7</figcaption></figure>
+            <figure><i style="background: var(--gray-100)"></i><figcaption>Gray 100<br />#E6E6E6</figcaption></figure>
+            <figure><i style="background: var(--orange)"></i><figcaption>Orange<br />#FF5A1F</figcaption></figure>
+          </div>
+        </section>
+        <section class="panel panel-screws" style="flex: 528">
+          <h2 class="eyebrow">Typography</h2>
+          <div class="type-specs">
+            <div><span class="t-display">Aa</span><b>Display</b><small>Light · 64/72</small></div>
+            <div><span class="sample" style="font-weight: 600">Aa</span><b>Heading</b><small>Medium · 24/32</small></div>
+            <div><span class="sample" style="font-weight: 300">Aa</span><b>Body</b><small>Regular · 16/24</small></div>
+            <div><span class="sample sample-label">AA</span><b>Label</b><small>Medium · 12/16</small></div>
+          </div>
+        </section>
+      </div>
+
+      <!-- row 2 -->
+      <div class="ds-row">
+        <section class="panel panel-screws" style="flex: 308">
+          <h2 class="eyebrow">Buttons</h2>
+          <div class="stack">
+            <button class="btn btn-primary btn-block">Primary Button</button>
+            <button class="btn btn-secondary btn-block">Secondary Button</button>
+            <button class="btn btn-block" disabled>Disabled Button</button>
+          </div>
+        </section>
+        <section class="panel panel-screws" style="flex: 290">
+          <h2 class="eyebrow">Icon buttons</h2>
+          <div class="icon-grid">
+            <button class="icon-btn" aria-label="Add"><svg class="icon"><use href="#i-plus" /></svg></button>
+            <button class="icon-btn" aria-label="Search"><svg class="icon"><use href="#i-search" /></svg></button>
+            <button class="icon-btn" aria-label="Favourite"><svg class="icon"><use href="#i-heart" /></svg></button>
+            <button class="icon-btn" aria-label="More"><svg class="icon"><use href="#i-more" /></svg></button>
+            <button class="icon-btn" aria-label="Back"><svg class="icon"><use href="#i-arrow-left" /></svg></button>
+            <button class="icon-btn" aria-label="Forward"><svg class="icon"><use href="#i-arrow-right" /></svg></button>
+            <button class="icon-btn" aria-label="Refresh"><svg class="icon"><use href="#i-refresh" /></svg></button>
+            <button class="icon-btn" aria-label="Adjust"><svg class="icon"><use href="#i-sliders" /></svg></button>
+          </div>
+        </section>
+        <section class="panel panel-screws" style="flex: 378">
+          <h2 class="eyebrow">Input fields</h2>
+          <div class="form-rows">
+            <label for="f1">Default</label>
+            <input id="f1" class="input" placeholder="Enter text..." />
+            <label for="f2">Focused</label>
+            <input id="f2" class="input is-focused" placeholder="Enter text..." />
+            <label for="f3">Error</label>
+            <div class="input-wrap">
+              <input id="f3" class="input is-error" placeholder="Enter text..." aria-invalid="true" />
+              <span class="input-icon error-dot">!</span>
+            </div>
+          </div>
+        </section>
+        <section class="panel panel-screws" style="flex: 268">
+          <h2 class="eyebrow">Select / Dropdown</h2>
+          <button class="select">Select option</button>
+          <ul class="menu" role="listbox" style="margin-top: 6px">
+            <li class="menu-item" role="option">Option 1</li>
+            <li class="menu-item" role="option" aria-selected="true">Option 2</li>
+            <li class="menu-item" role="option">Option 3</li>
+          </ul>
+        </section>
+        <section class="panel panel-screws" style="flex: 190">
+          <h2 class="eyebrow">Checkbox &amp; Radio</h2>
+          <div class="stack choices">
+            <label class="choice"><input type="checkbox" checked /> Checked</label>
+            <label class="choice"><input type="checkbox" /> Unchecked</label>
+            <label class="choice"><input type="radio" name="r" checked /> Selected</label>
+            <label class="choice"><input type="radio" name="r" /> Unselected</label>
+          </div>
+        </section>
+      </div>
+
+      <!-- row 3 -->
+      <div class="ds-row">
+        <section class="panel panel-screws" style="flex: 268">
+          <h2 class="eyebrow">Toggle switches</h2>
+          <div class="center-row">
+            <label class="switch"><input type="checkbox" checked /><span class="switch-label">On</span></label>
+            <label class="switch"><input type="checkbox" /><span class="switch-label">Off</span></label>
+          </div>
+        </section>
+        <section class="panel panel-screws" style="flex: 325">
+          <h2 class="eyebrow">Sliders</h2>
+          <div class="stack">
+            <input class="slider" type="range" value="54" aria-label="Volume" />
+            <div class="range" style="--from: 25%; --to: 74%">
+              <span class="range-fill"></span>
+              <span class="range-thumb" style="--at: 25%"></span>
+              <span class="range-thumb" style="--at: 74%"></span>
+            </div>
+          </div>
+        </section>
+        <section class="panel panel-screws" style="flex: 347">
+          <h2 class="eyebrow">Rotary dials</h2>
+          <div class="center-row dials">
+            <div class="dial"><div class="dial-knob"></div><span class="dial-label">Large</span></div>
+            <div class="dial dial-md"><div class="dial-knob"></div><span class="dial-label">Medium</span></div>
+            <div class="dial dial-sm"><div class="dial-knob"></div><span class="dial-label">Small</span></div>
+          </div>
+        </section>
+        <section class="panel panel-screws" style="flex: 294">
+          <h2 class="eyebrow">Tabs</h2>
+          <div class="tabs" role="tablist">
+            <button class="tab" role="tab" aria-selected="true">Overview</button>
+            <button class="tab" role="tab" aria-selected="false">Details</button>
+            <button class="tab" role="tab" aria-selected="false">Settings</button>
+          </div>
+        </section>
+        <section class="panel panel-screws" style="flex: 202">
+          <h2 class="eyebrow">Badges</h2>
+          <div class="center-row" style="gap: 8px; justify-content: flex-start">
+            <span class="badge badge-accent">New</span>
+            <span class="badge badge-dark">Popular</span>
+            <span class="badge badge-light">Beta</span>
+          </div>
+        </section>
+      </div>
+
+      <!-- row 4 -->
+      <div class="ds-row">
+        <section class="panel panel-screws" style="flex: 416">
+          <h2 class="eyebrow">Progress indicator</h2>
+          <div class="progress-row">
+            <div class="progress progress-led" style="flex: 1"><i style="--value: 72%"></i></div>
+            <span>72%</span>
+          </div>
+          <div class="progress-row" style="margin-top: 18px">
+            <div class="ring" style="--value: 72"><span>72%</span></div>
+            <div class="dots" style="margin-left: 72px"><i class="is-active"></i><i></i><i></i><i></i></div>
+          </div>
+        </section>
+        <section class="panel panel-screws" style="flex: 427">
+          <h2 class="eyebrow">Alerts</h2>
+          <div class="stack" style="gap: 10px">
+            <div class="alert" role="status">
+              <svg class="icon"><use href="#i-info" /></svg><span class="alert-body">Information message</span>
+              <button class="alert-close" aria-label="Dismiss"><svg class="icon"><use href="#i-x" /></svg></button>
+            </div>
+            <div class="alert" role="status">
+              <svg class="icon"><use href="#i-warning" /></svg><span class="alert-body">Warning message</span>
+              <button class="alert-close" aria-label="Dismiss"><svg class="icon"><use href="#i-x" /></svg></button>
+            </div>
+            <div class="alert" role="alert">
+              <svg class="icon"><use href="#i-info" /></svg><span class="alert-body">Error message</span>
+              <button class="alert-close" aria-label="Dismiss"><svg class="icon"><use href="#i-x" /></svg></button>
+            </div>
+          </div>
+        </section>
+        <section class="panel panel-screws" style="flex: 618">
+          <h2 class="eyebrow">Cards</h2>
+          <div class="center-row" style="gap: 28px; align-items: stretch">
+            <article class="card" style="flex: 1">
+              <h3 class="card-title">Card Title</h3>
+              <p class="card-text">Secondary description<br />goes here.</p>
+              <button class="btn btn-primary btn-sm" style="min-width: 118px">Action</button>
+            </article>
+            <article class="card" style="flex: 1">
+              <h3 class="card-title">Card Title</h3>
+              <p class="card-text">Secondary description<br />goes here.</p>
+              <button class="btn btn-tertiary btn-sm" style="min-width: 112px">Action</button>
+            </article>
+          </div>
+        </section>
+      </div>
+
+      <!-- row 5 -->
+      <div class="ds-row">
+        <section class="panel panel-screws" style="flex: 227">
+          <h2 class="eyebrow">Navigation</h2>
+          <ul class="nav">
+            <li><a class="nav-item" aria-current="page" href="#"><svg class="icon"><use href="#i-home" /></svg>Home</a></li>
+            <li><a class="nav-item" href="#"><svg class="icon"><use href="#i-grid" /></svg>Projects</a></li>
+            <li><a class="nav-item" href="#"><svg class="icon"><use href="#i-folder" /></svg>Files</a></li>
+            <li><a class="nav-item" href="#"><svg class="icon"><use href="#i-user" /></svg>Team</a></li>
+            <li><a class="nav-item" href="#"><svg class="icon"><use href="#i-settings" /></svg>Settings</a></li>
+          </ul>
+        </section>
+        <div class="ds-col" style="flex: 565">
+          <section class="panel panel-screws">
+            <h2 class="eyebrow">Top bar</h2>
+            <div class="topbar">
+              <svg class="icon"><use href="#i-menu" /></svg>
+              <h3 class="topbar-title">Title</h3>
+              <label class="search"><svg class="icon"><use href="#i-search" /></svg><input placeholder="Search..." /></label>
+              <span class="bell"><svg class="icon"><use href="#i-bell" /></svg></span>
+              <span class="avatar avatar-sm"></span>
+            </div>
+          </section>
+          <div class="ds-row" style="margin: 0">
+            <section class="panel panel-screws" style="flex: 340">
+              <h2 class="eyebrow">Pagination</h2>
+              <nav class="pagination" aria-label="Pages">
+                <button class="page-btn" aria-label="Previous"><svg class="icon"><use href="#i-chevron-left" /></svg></button>
+                <button class="page-btn" aria-current="page">1</button>
+                <button class="page-btn">2</button>
+                <button class="page-btn">3</button>
+                <button class="page-btn">4</button>
+                <button class="page-btn">5</button>
+                <button class="page-btn" aria-label="Next"><svg class="icon"><use href="#i-chevron-right" /></svg></button>
+              </nav>
+            </section>
+            <section class="panel panel-screws" style="flex: 210">
+              <h2 class="eyebrow">Avatars</h2>
+              <div class="center-row avatars">
+                <figure><span class="avatar"></span><figcaption>48 px</figcaption></figure>
+                <figure><span class="avatar avatar-md"></span><figcaption>40 px</figcaption></figure>
+                <figure><span class="avatar avatar-sm"></span><figcaption>32 px</figcaption></figure>
+              </div>
+            </section>
+          </div>
+        </div>
+        <section class="panel panel-screws" style="flex: 190">
+          <h2 class="eyebrow">Tooltip</h2>
+          <div class="center-row" style="padding-top: 18px"><span class="tooltip" role="tooltip">Helpful hint</span></div>
+        </section>
+        <section class="panel panel-screws" style="flex: 192">
+          <h2 class="eyebrow">Context menu</h2>
+          <ul class="menu menu-compact" role="menu">
+            <li class="menu-item" role="menuitem"><svg class="icon"><use href="#i-pencil" /></svg>Edit</li>
+            <li class="menu-item" role="menuitem"><svg class="icon"><use href="#i-copy" /></svg>Duplicate</li>
+            <li class="menu-item is-danger" role="menuitem"><svg class="icon"><use href="#i-trash" /></svg>Delete</li>
+          </ul>
+        </section>
+        <section class="panel panel-screws" style="flex: 260">
+          <h2 class="eyebrow">Modal</h2>
+          <div class="modal" role="dialog" aria-labelledby="mt">
+            <button class="alert-close modal-close" aria-label="Close"><svg class="icon"><use href="#i-x" /></svg></button>
+            <h3 class="modal-title" id="mt">Modal Title</h3>
+            <p class="modal-text">This is a modal description<br />with a short message.</p>
+            <div class="modal-actions">
+              <button class="btn btn-tertiary">Cancel</button>
+              <button class="btn btn-primary">Confirm</button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+    <script type="module" src="/src/ui/design/showcase.ts"></script>
+  </body>
+</html>

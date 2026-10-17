@@ -9,14 +9,15 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['apple-touch-icon.png'],
+      workbox: { globPatterns: ['**/*.{js,css,html,png,woff2}'] },
       manifest: {
         name: 'Whoosh',
         short_name: 'Whoosh',
         description: 'Send short messages between nearby devices as sound.',
         display: 'standalone',
         orientation: 'portrait',
-        background_color: '#0b1020',
-        theme_color: '#0b1020',
+        background_color: '#4b4a4a',
+        theme_color: '#4b4a4a',
         icons: [
           { src: 'icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: 'icon-512.png', sizes: '512x512', type: 'image/png' },
@@ -25,5 +26,11 @@ export default defineConfig({
       },
     }),
   ],
+  build: {
+    rollupOptions: {
+      // design-system.html is the live reference for the UI kit.
+      input: { main: 'index.html', designSystem: 'design-system.html' },
+    },
+  },
   test: { include: ['tests/**/*.test.ts'], environment: 'node' },
 });

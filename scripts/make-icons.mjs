@@ -22,8 +22,8 @@ const chunk = (type, data) => {
 };
 
 function png(size) {
-  const bg = [11, 16, 32];
-  const fg = [125, 211, 252];
+  const bg = [75, 74, 74];
+  const fg = [255, 90, 31];
   const raw = Buffer.alloc((size * 3 + 1) * size);
   const cx = size * 0.3;
   const cy = size * 0.5;

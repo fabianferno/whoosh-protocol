@@ -1,0 +1,117 @@
+/*
+ * Whoosh design tokens — skeuomorphic graphite + signal orange.
+ * Every component in components.css is built only from these values.
+ */
+@import '@fontsource-variable/inter';
+
+:root {
+  color-scheme: dark;
+
+  /* ---- palette (from the UI kit colour tokens) ---- */
+  --gray-900: #0f0f0f;
+  --gray-800: #1a1a1a;
+  --gray-700: #2a2a2a;
+  --gray-600: #3b3b3b;
+  --gray-500: #4b4a4a; /* page */
+  --gray-450: #5e5c5c; /* panel */
+  --gray-400: #7a7a7a;
+  --gray-300: #8f8d8d; /* raised surfaces */
+  --gray-200: #c7c7c7;
+  --gray-100: #e6e6e6;
+  --orange: #ff5a1f;
+  --orange-hi: #f8652a;
+  --orange-lo: #db4814;
+  --orange-deep: #b53d17;
+
+  /* ---- semantic ---- */
+  --page: var(--gray-500);
+  --panel-top: #5f5d5d;
+  --panel-bottom: #4f4d4d;
+  --text: #f2f2f2;
+  --text-strong: #ffffff;
+  --text-muted: #d4d2d2;
+  --text-subtle: #a9a7a7;
+  --text-dim: #8c8a8a;
+  --ink: #1c1b1b; /* text and icons on light raised surfaces */
+  --ink-muted: #3a3939;
+  --accent: var(--orange);
+  --on-accent: #ffffff;
+
+  /* ---- surfaces: gradients measured from the kit ---- */
+  --grad-primary: linear-gradient(180deg, #f25a24 0%, #e24f1b 40%, #da4814 75%, #df4912 100%);
+  --grad-primary-hover: linear-gradient(180deg, #ff6a32 0%, #ef5822 40%, #e44f18 100%);
+  --grad-secondary: linear-gradient(180deg, #484647 0%, #3e3e3d 50%, #353534 100%);
+  --grad-raised: linear-gradient(180deg, #9c999a 0%, #8d8b8b 45%, #7b7979 100%);
+  --grad-raised-soft: linear-gradient(180deg, #908f8e 0%, #8a8888 50%, #828080 100%);
+  --grad-card: linear-gradient(180deg, #918e8f 0%, #7f7e7f 40%, #6b6a6a 75%, #626161 100%);
+  --grad-select: linear-gradient(180deg, #939091 0%, #868484 50%, #777576 100%);
+  --grad-dark: linear-gradient(180deg, #4b4949 0%, #3f3d3d 100%);
+  --grad-menu: linear-gradient(180deg, #5c5a59 0%, #4c4a4a 60%, #474546 100%);
+  --grad-panel: linear-gradient(180deg, var(--panel-top) 0%, var(--panel-bottom) 100%);
+  --grad-knob: radial-gradient(circle at 50% 30%, #a3a1a0 0%, #8a8888 45%, #6d6b6b 100%);
+  --well: #4c4b4b; /* inset input fill */
+  --track: #3a3939; /* inset slider / progress track */
+
+  /* ---- light & shadow ---- */
+  /* Light comes from straight above: top edges catch it, bottom edges fall away. */
+  --edge-hi: rgb(255 255 255 / 0.5); /* top bevel catch-light */
+  --edge-hi-soft: rgb(255 255 255 / 0.14);
+  --edge-lo: rgb(0 0 0 / 0.55);
+  --gloss: linear-gradient(180deg, rgb(255 255 255 / 0.2) 0%, rgb(255 255 255 / 0.07) 46%, rgb(255 255 255 / 0) 54%);
+  --brushed: repeating-linear-gradient(0deg, rgb(255 255 255 / 0.018) 0 1px, rgb(0 0 0 / 0.025) 1px 2px, transparent 2px 4px);
+  --metal: conic-gradient(from 0deg, #8c8a8a, #c4c2c1 40deg, #7a7878 100deg, #a3a1a0 170deg, #6c6a6a 240deg, #b9b7b6 310deg, #8c8a8a);
+  --shadow-raised: inset 0 1px 0 var(--edge-hi), inset 0 -2px 2px rgb(0 0 0 / 0.16), 0 0 0 1px rgb(0 0 0 / 0.42),
+    0 2px 0 #353333, 0 4px 6px rgb(0 0 0 / 0.42), 0 10px 18px -6px rgb(0 0 0 / 0.45);
+  --shadow-raised-lg: inset 0 1px 0 var(--edge-hi), inset 0 -2px 3px rgb(0 0 0 / 0.16), 0 0 0 1px rgb(0 0 0 / 0.4),
+    0 3px 0 #383636, 0 6px 10px rgb(0 0 0 / 0.42), 0 16px 26px -8px rgb(0 0 0 / 0.5);
+  --shadow-dark-key: inset 0 1px 0 rgb(255 255 255 / 0.22), inset 0 -2px 2px rgb(0 0 0 / 0.3), 0 0 0 1px rgb(0 0 0 / 0.6),
+    0 2px 0 #1e1d1d, 0 4px 6px rgb(0 0 0 / 0.45), 0 10px 18px -6px rgb(0 0 0 / 0.45);
+  --shadow-accent: inset 0 1px 0 rgb(255 214 186 / 0.85), inset 0 -2px 3px rgb(120 30 0 / 0.35), 0 0 0 1px #7a2a0c,
+    0 2px 0 #8a2e0c, 0 4px 6px rgb(60 15 0 / 0.5), 0 10px 20px -6px rgb(255 90 31 / 0.4);
+  --shadow-pressed: inset 0 3px 6px rgb(0 0 0 / 0.55), inset 0 1px 2px rgb(0 0 0 / 0.6), 0 0 0 1px rgb(0 0 0 / 0.45),
+    0 1px 0 rgb(255 255 255 / 0.16);
+  --shadow-pressed-accent: inset 0 3px 6px rgb(90 20 0 / 0.6), inset 0 1px 2px rgb(90 20 0 / 0.6), 0 0 0 1px #7a2a0c,
+    0 1px 0 rgb(255 255 255 / 0.16);
+  --shadow-inset: inset 0 3px 6px rgb(0 0 0 / 0.55), inset 0 1px 2px rgb(0 0 0 / 0.7), inset 0 -1px 0 rgb(255 255 255 / 0.07),
+    0 -1px 0 rgb(0 0 0 / 0.28), 0 1px 0 rgb(255 255 255 / 0.26);
+  --shadow-panel: inset 0 1px 0 rgb(255 255 255 / 0.16), inset 0 -1px 0 rgb(0 0 0 / 0.3), inset 0 0 0 1px rgb(255 255 255 / 0.03),
+    0 0 0 1px rgb(0 0 0 / 0.38), 0 2px 0 rgb(0 0 0 / 0.22), 0 10px 22px -4px rgb(0 0 0 / 0.4);
+  --shadow-knob: inset 0 1px 1px rgb(255 255 255 / 0.65), inset 0 -2px 3px rgb(0 0 0 / 0.3), 0 0 0 1px rgb(0 0 0 / 0.45),
+    0 2px 3px rgb(0 0 0 / 0.5), 0 6px 10px rgb(0 0 0 / 0.35);
+  --glow-accent: 0 0 0 1px rgb(255 120 60 / 0.35), 0 0 10px rgb(255 90 31 / 0.45), 0 0 22px rgb(255 90 31 / 0.25);
+  --emboss: 0 1px 0 rgb(255 255 255 / 0.32); /* dark ink pressed into a light plate */
+  --engrave: 0 -1px 0 rgb(0 0 0 / 0.55), 0 1px 0 rgb(255 255 255 / 0.08); /* light text cut into a dark plate */
+
+  /* ---- type ---- */
+  --font: 'Inter Variable', Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --fs-display: 4rem; /* 64/72 light */
+  --lh-display: 4.5rem;
+  --fs-heading: 1.5rem; /* 24/32 medium */
+  --lh-heading: 2rem;
+  --fs-body: 1rem; /* 16/24 regular */
+  --lh-body: 1.5rem;
+  --fs-label: 0.75rem; /* 12/16 medium, tracked caps */
+  --lh-label: 1rem;
+  --fs-small: 0.875rem;
+  --tracking-label: 0.18em;
+  --tracking-title: 0.22em;
+
+  /* ---- shape & space ---- */
+  --r-xs: 4px;
+  --r-sm: 6px;
+  --r-md: 8px;
+  --r-lg: 10px;
+  --r-pill: 999px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --control-h: 44px;
+  --control-h-lg: 48px;
+
+  /* ---- grain overlay ---- */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.14 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}

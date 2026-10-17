@@ -9,7 +9,8 @@
     "preview": "vite preview --host",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "icons": "node scripts/make-icons.mjs"
+    "icons": "node scripts/make-icons.mjs",
+    "preinstall": "npx only-allow pnpm"
   },
   "devDependencies": {
     "@vitejs/plugin-basic-ssl": "2.3.0",
@@ -17,5 +18,12 @@
     "vite": "8.3.4",
     "vite-plugin-pwa": "2.0.0",
     "vitest": "5.0.5"
+  },
+  "dependencies": {
+    "@fontsource-variable/inter": "^5.2.5"
+  },
+  "packageManager": "pnpm@12.3.4",
+  "engines": {
+    "pnpm": ">=12"
   }
 }

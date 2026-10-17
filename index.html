@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#0b1020" />
+    <meta name="theme-color" content="#4b4a4a" />
     <meta name="description" content="Send short messages between nearby devices as sound." />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="icon" href="/icon-192.png" />
@@ -11,38 +11,46 @@
   </head>
   <body>
     <main>
-      <header>
+      <header class="app-header">
+        <span class="rule"></span>
         <h1>Whoosh</h1>
         <p>Short messages between nearby devices, sent as sound.</p>
       </header>
 
-      <nav role="tablist" aria-label="Screens">
-        <button role="tab" data-tab="send" aria-selected="true">Send</button>
-        <button role="tab" data-tab="receive" aria-selected="false">Receive</button>
-        <button role="tab" data-tab="diag" aria-selected="false">Diagnostics</button>
+      <nav class="tabs" role="tablist" aria-label="Screens">
+        <button class="tab" role="tab" data-tab="send" aria-selected="true">Send</button>
+        <button class="tab" role="tab" data-tab="receive" aria-selected="false">Receive</button>
+        <button class="tab" role="tab" data-tab="diag" aria-selected="false">Diagnostics</button>
       </nav>
 
-      <section id="send" role="tabpanel">
-        <label for="text">Message</label>
-        <textarea id="text" rows="3" placeholder="blue river quick zoo" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea>
-        <p id="hint" class="hint">Type a message. Up to 512 bytes.</p>
-        <label class="check"><input id="loop" type="checkbox" /> Repeat until stopped</label>
-        <button id="sendBtn" class="primary" type="button">Send as sound</button>
-        <button id="beepBtn" class="secondary" type="button">Play test beep</button>
+      <section id="send" class="panel panel-screws" role="tabpanel">
+        <h2 class="eyebrow"><label for="text">Message</label></h2>
+        <textarea id="text" class="input" rows="3" placeholder="blue river quick zoo" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea>
+        <p id="hint" class="field-hint">Type a message. Up to 512 bytes.</p>
+        <label class="switch switch-row"><input id="loop" type="checkbox" /><span>Repeat until stopped</span></label>
+        <div class="actions">
+          <button id="sendBtn" class="btn btn-primary btn-block btn-lg" type="button">Send as sound</button>
+          <button id="beepBtn" class="btn btn-secondary btn-block" type="button">Play test beep</button>
+        </div>
         <p id="sendStatus" class="status" role="status"></p>
       </section>
 
-      <section id="receive" role="tabpanel" hidden>
-        <button id="listenBtn" class="primary" type="button">Start listening</button>
-        <div class="meter" aria-hidden="true"><div id="level"></div></div>
+      <section id="receive" class="panel panel-screws" role="tabpanel" hidden>
+        <h2 class="eyebrow">Receiver</h2>
+        <button id="listenBtn" class="btn btn-primary btn-block btn-lg" type="button">Start listening</button>
+        <div class="level">
+          <span class="t-label muted">Input level</span>
+          <div class="progress progress-led" aria-hidden="true"><i id="level"></i></div>
+        </div>
         <p id="recvStatus" class="status" role="status">Not listening.</p>
         <ul id="inbox" class="inbox"></ul>
       </section>
 
-      <section id="diag" role="tabpanel" hidden>
+      <section id="diag" class="panel panel-screws" role="tabpanel" hidden>
+        <h2 class="eyebrow">Diagnostics</h2>
         <dl id="stats" class="stats"></dl>
         <div id="tones" class="tones" aria-label="Tone levels"></div>
-        <p class="hint">Start listening on the Receive screen, then play a message from the other device. Two rows of 16 bars: each should show one clear peak while a message is playing.</p>
+        <p class="field-hint">Start listening on the Receive screen, then play a message from the other device. Two rows of 16 bars: each should show one clear peak while a message is playing.</p>
       </section>
     </main>
     <script type="module" src="/src/ui/main.ts"></script>
