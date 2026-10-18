@@ -18,6 +18,8 @@ export default defineConfig({
         name: 'Whoosh',
         short_name: 'Whoosh',
         description: 'Send short messages between nearby devices as sound.',
+        // The installed PWA opens the app, not the landing page.
+        start_url: 'app/',
         display: 'standalone',
         orientation: 'portrait',
         background_color: '#4b4a4a',
@@ -32,8 +34,8 @@ export default defineConfig({
   ],
   build: {
     rollupOptions: {
-      // design-system.html is the live reference for the UI kit.
-      input: { main: 'index.html', designSystem: 'design-system.html' },
+      // index.html is the landing page, app/index.html the app; design-system.html is the live reference for the UI kit.
+      input: { main: 'index.html', app: 'app/index.html', designSystem: 'design-system.html' },
     },
   },
   test: { include: ['tests/**/*.test.ts'], environment: 'node' },

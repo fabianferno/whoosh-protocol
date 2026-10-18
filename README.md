@@ -2,6 +2,7 @@
 
 Offline, encrypted group messaging between phones as near-ultrasonic sound, with an Arkiv settlement layer.
 Short texts (up to 100 bytes), a few metres per hop, one speaker at a time: pager-scale, not a chat app.
+Live: [whoosh-protocol.vercel.app](https://whoosh-protocol.vercel.app) (landing page; the app is at [`/app/`](https://whoosh-protocol.vercel.app/app/)).
 Design and scope: [prd.md](prd.md). Primary track: Censorship Resistance. Secondary: Privacy.
 
 - **Acoustic layer:** [ggwave](https://github.com/ggerganov/ggwave) (WebAssembly, MIT) in its ultrasound mode, with an audible fallback.
@@ -33,13 +34,13 @@ pnpm build         # type-check and production build into dist/
 
 ### Try it with no second device
 
-Open the app, go to **Debug**, tap **Run loopback self-test**. It encrypts a message, plays it as sound through noise into the
+Open the app (`/app/`), go to **Debug**, tap **Run loopback self-test**. It encrypts a message, plays it as sound through noise into the
 same detector, decoder and decryption the app uses when listening, and reports PASS or FAIL for ultrasound and audible, clean
 and at 0 dB signal-to-noise. No microphone or speaker is needed.
 
 ### Two devices
 
-1. Run `pnpm dev`. On the laptop open `https://localhost:5173`; on the phone open the `Network:` URL it prints
+1. Run `pnpm dev`. On the laptop open `https://localhost:5173/app/`; on the phone open the `Network:` URL it prints, plus `/app/`
    (same Wi-Fi). Accept the self-signed certificate warning: the microphone needs https.
 2. **Group** tab: on one device tap *Create new group* and read the six words aloud; on the other, type them under *Join with a passphrase*.
 3. **Receive** tab on one device: *Start listening*. **Send** tab on the other: type a message, *Send as sound*.
@@ -79,7 +80,8 @@ src/app/      secure send/receive, loopback self-test
 src/mesh/     relay: listen-before-talk, backoff, ttl, suppression
 src/arkiv/    schema types, gateway, SDK store, in-memory store, burner wallet
 src/storage/  IndexedDB: group keys, wallet, outbox
-src/ui/       screens and the Arkiv panel
+src/ui/       screens and the Arkiv panel (app/index.html)
+src/landing/  landing page (index.html)
 tests/        unit tests with a seeded noisy-channel simulator
 ```
 

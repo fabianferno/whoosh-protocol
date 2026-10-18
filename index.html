@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#4b4a4a" />
+    <meta name="description" content="Offline, encrypted group messaging between phones as near-ultrasonic sound, settled to Arkiv when any phone gets internet." />
+    <meta property="og:title" content="Whoosh: messages that travel as sound" />
+    <meta property="og:description" content="Offline, encrypted group messaging between phones as near-ultrasonic sound, settled to Arkiv when any phone gets internet." />
+    <meta property="og:image" content="/icon-512.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="icon" href="/icon-192.png" />
+    <title>Whoosh: messages that travel as sound</title>
+  </head>
+  <body class="landing">
+    <header class="site-head">
+      <a class="brand" href="./"><span class="rule"></span>Whoosh</a>
+      <nav class="site-nav" aria-label="Sections">
+        <a href="#how">How it works</a>
+        <a href="#arkiv">Arkiv</a>
+        <a href="#limits">Limits</a>
+        <a href="https://github.com/fabianferno/whoosh-protocol" rel="noopener">GitHub</a>
+      </nav>
+      <a class="btn btn-primary btn-sm" href="app/">Open the app</a>
+    </header>
+
+    <main class="site">
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Offline · encrypted · sound</p>
+          <h1 class="hero-title">Messages that travel as sound.</h1>
+          <p class="hero-lede">
+            When mobile data is cut, Whoosh passes short encrypted texts from phone to phone over near-ultrasound,
+            relays them hop by hop, and saves them to Arkiv when any phone in range gets back online.
+            It runs in the browser, with no Bluetooth pairing, no app store and no account.
+          </p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="app/">Open the app</a>
+            <a class="btn btn-secondary" href="https://github.com/fabianferno/whoosh-protocol" rel="noopener">Read the code</a>
+          </div>
+          <p class="field-hint">No second phone? Open the app, go to <b>Debug</b> and run the loopback self-test.</p>
+        </div>
+
+        <figure class="panel panel-screws scope">
+          <div class="scope-head">
+            <h2 class="eyebrow">Live spectrum</h2>
+            <span class="badge badge-accent" id="scopeBadge">Carrier</span>
+          </div>
+          <div class="tones" id="scope" aria-hidden="true"></div>
+          <div class="tones-axis"><span>0.5 kHz</span><span>11 kHz</span><span>22 kHz</span></div>
+          <figcaption class="scope-packet">
+            <span class="t-label muted">Packet on air</span>
+            <code id="scopeHex" class="mono">a3 01 cc 84 64 7e 00 00 6a d8 1f 03 ...</code>
+          </figcaption>
+        </figure>
+      </section>
+
+      <section class="facts" aria-label="At a glance">
+        <div class="fact"><b>100</b><span>bytes per message</span></div>
+        <div class="fact"><b>15–19.5</b><span>kHz, near-ultrasound</span></div>
+        <div class="fact"><b>AES-256</b><span>GCM, key shared in person</span></div>
+        <div class="fact"><b>3</b><span>relay hops by default</span></div>
+      </section>
+
+      <section id="how" class="block">
+        <p class="eyebrow">How it works</p>
+        <h2 class="block-title">Each phone's speaker and microphone carry the message.</h2>
+        <ol class="steps">
+          <li class="card">
+            <span class="step-n">01</span>
+            <h3 class="card-title">Share a key in person</h3>
+            <p class="card-text">One phone creates a group and shows six words. Read them aloud to people you trust. They never touch a server.</p>
+          </li>
+          <li class="card">
+            <span class="step-n">02</span>
+            <h3 class="card-title">Send as sound</h3>
+            <p class="card-text">Your text is encrypted, packed into a packet of at most 127 bytes and played as near-ultrasonic tones through ggwave.</p>
+          </li>
+          <li class="card">
+            <span class="step-n">03</span>
+            <h3 class="card-title">Phones relay it</h3>
+            <p class="card-text">Listening phones check the tag and rebroadcast after a random delay, only once the room is quiet, until the ttl runs out.</p>
+          </li>
+          <li class="card">
+            <span class="step-n">04</span>
+            <h3 class="card-title">A gateway settles it</h3>
+            <p class="card-text">Any phone with internet writes the ciphertext to Arkiv. A second group of phones pulls it down and plays it to the people around it.</p>
+          </li>
+        </ol>
+      </section>
+
+      <section id="arkiv" class="block split">
+        <div>
+          <p class="eyebrow">Arkiv settlement layer</p>
+          <h2 class="block-title">A record no single operator can quietly delete.</h2>
+          <p class="block-text">
+            Groups of phones out of earshot of each other are joined through Arkiv. A gateway verifies each packet it hears,
+            checks whether it is already stored, and writes it as a <code class="mono">whoosh.msg</code> entity, byte-identical
+            to what was on the air. Readers query by channel and time, verify the GCM tag, and drop anything forged.
+          </p>
+          <p class="block-text">
+            The payload is ciphertext. Without the group key, Arkiv shows a rotating channel tag, a time, a size and the
+            gateway's burner wallet.
+          </p>
+          <div class="hero-actions">
+            <a class="btn btn-secondary" href="https://github.com/fabianferno/whoosh-protocol/blob/main/arkiv/schema.md" rel="noopener">Schema</a>
+            <a class="btn btn-secondary" href="https://github.com/fabianferno/whoosh-protocol/blob/main/arkiv/evidence.md" rel="noopener">On-chain evidence</a>
+          </div>
+        </div>
+        <div class="panel panel-screws">
+          <h3 class="eyebrow">Entity · whoosh.msg</h3>
+          <dl class="stats">
+            <dt>payload</dt><dd>header + ciphertext + tag</dd>
+            <dt>app</dt><dd>whoosh</dd>
+            <dt>chan</dt><dd>HMAC(key, day), 16 bit</dd>
+            <dt>mid</dt><dd>sender + seq</dd>
+            <dt>ts</dt><dd>u64, range-queried</dd>
+            <dt>hops</dt><dd>i32</dd>
+            <dt>expires</dt><dd>7 days</dd>
+          </dl>
+          <p class="field-hint">First settlement on Tiramisu, heard by a phone and read back by a separate client:</p>
+          <p class="words mono key">0x72b2780eb56344fafe16025bf1b65672d7967bfcd152fc63ac02a8f4d95be655</p>
+        </div>
+      </section>
+
+      <section class="block">
+        <p class="eyebrow">Built for</p>
+        <h2 class="block-title">Small trusted groups during a shutdown.</h2>
+        <div class="uses">
+          <div class="panel"><h3 class="card-title">Marshals and medics</h3><p class="card-text">Coordinating across a crowd when the mobile network is down.</p></div>
+          <div class="panel"><h3 class="card-title">Journalists</h3><p class="card-text">A timestamped record of what the group reported, settled later and hard to delete.</p></div>
+          <div class="panel"><h3 class="card-title">Blackout communities</h3><p class="card-text">Notices passed hop by hop through a market or a camp.</p></div>
+        </div>
+      </section>
+
+      <section id="limits" class="block">
+        <div class="panel panel-screws limits">
+          <p class="eyebrow">Limits</p>
+          <h2 class="block-title">What Whoosh does not do.</h2>
+          <ul>
+            <li><b>Pager-scale.</b> Short texts, a few metres per hop, one speaker at a time. Not a chat app.</li>
+            <li><b>Not covert.</b> Near-ultrasound shows up on any spectrum analyser.</li>
+            <li><b>No forward secrecy.</b> A leaked key decrypts every past message, including those on Arkiv.</li>
+            <li><b>No sender authentication.</b> Any key holder can forge a message as any other.</li>
+            <li><b>Foreground only.</b> Browsers do not allow background audio, so a phone relays only while the app is open.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="block cta">
+        <h2 class="block-title">Try it with two phones.</h2>
+        <p class="block-text">Create a group on one, join with the six words on the other, start listening, and send.</p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="app/">Open the app</a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-foot">
+      <span>MIT licensed. Acoustic layer by <a href="https://github.com/ggerganov/ggwave" rel="noopener">ggwave</a>. Settled on Arkiv Tiramisu.</span>
+      <a href="https://github.com/fabianferno/whoosh-protocol" rel="noopener">github.com/fabianferno/whoosh-protocol</a>
+    </footer>
+
+    <script type="module" src="/src/landing/landing.ts"></script>
+  </body>
+</html>
