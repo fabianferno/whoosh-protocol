@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { encodeText, MAX_BYTES, TextDecoderStream, TooLongError, TX_RATE, type Band } from '../src/audio/ggwave.ts';
+import { encodeBytes, encodeText, MAX_BYTES, MAX_PACKET_BYTES, TextDecoderStream, TooLongError, TX_RATE, type Band } from '../src/audio/ggwave.ts';
+import { openText, sealText } from '../src/packet/codec.ts';
+import { deriveGroupKeys } from '../src/packet/keys.ts';
+import { SenderIdentity } from '../src/packet/session.ts';
 import * as ch from './helpers/channel.ts';
 
 async function receive(x: Float32Array, rate: number, chunk = 4096): Promise<string[]> {
@@ -57,5 +60,37 @@ describe('encodeText', () => {
     const rand = ch.rng(2);
     const noise = Float32Array.from({ length: TX_RATE * 4 }, () => 0.05 * ch.gauss(rand));
     expect(await receive(noise, TX_RATE)).toEqual([]);
+  });
+});
+
+describe('ggwave carries packets', () => {
+  it('round-trips binary data with zero and high bytes in both bands', async () => {
+    const payload = Uint8Array.from({ length: 127 }, (_, i) => (i * 29 + 3) & 0xff);
+    payload[5] = 0;
+    payload[6] = 0xff;
+    for (const band of ['ultrasound', 'audible'] as const) {
+      const wave = await encodeBytes(payload, band);
+      const rx = await TextDecoderStream.create(TX_RATE);
+      const got = ch.feed((c) => { const b = rx.pushBytes(c); return b ? [b] : []; }, ch.offset(wave, 6000));
+      rx.free();
+      expect(got).toHaveLength(1);
+      expect([...got[0]]).toEqual([...payload]);
+    }
+  });
+
+  it('delivers an encrypted packet end to end through noise', async () => {
+    const keys = await deriveGroupKeys('amber lunar fossil quick river zoo', 1000);
+    const packet = await sealText(keys, new SenderIdentity(), 'meet at the old bridge at noon', 1_790_000_000);
+    const wave = ch.addNoise(ch.offset(await encodeBytes(packet, 'ultrasound'), 6000), 6, ch.rng(21));
+    const rx = await TextDecoderStream.create(TX_RATE);
+    const got = ch.feed((c) => { const b = rx.pushBytes(c); return b ? [b] : []; }, wave);
+    rx.free();
+    expect(got).toHaveLength(1);
+    expect((await openText(keys, got[0]))?.text).toBe('meet at the old bridge at noon');
+  });
+
+  it('rejects empty and over-size packets', async () => {
+    await expect(encodeBytes(new Uint8Array(0), 'audible')).rejects.toThrow('Nothing to send');
+    await expect(encodeBytes(new Uint8Array(MAX_PACKET_BYTES + 1), 'audible')).rejects.toBeInstanceOf(TooLongError);
   });
 });

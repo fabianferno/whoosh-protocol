@@ -15,7 +15,7 @@ declare module 'ggwave' {
     init(parameters: Parameters): number;
     free(instance: number): void;
     /** Float32 waveform as raw bytes. The view is reused by the next call, so copy it. */
-    encode(instance: number, text: string, protocol: unknown, volume: number): Int8Array;
+    encode(instance: number, data: string | Uint8Array, protocol: unknown, volume: number): Int8Array;
     /** Decoded payload bytes (empty when no message has completed). */
     decode(instance: number, samples: Int8Array): Int8Array;
     disableLog(): void;
