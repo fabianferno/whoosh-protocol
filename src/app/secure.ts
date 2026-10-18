@@ -43,6 +43,11 @@ export class PacketInbox {
 
   constructor(private readonly keys: GroupKeys, private readonly maxSeen = 1000) {}
 
+  /** True if this message id has already been accepted. */
+  has(mid: string): boolean {
+    return this.seen.has(mid);
+  }
+
   async accept(packet: Uint8Array, now = nowSeconds()): Promise<Received | null> {
     if (!(await isForChannel(this.keys, packet, now))) return null;
     const opened = await openText(this.keys, packet);

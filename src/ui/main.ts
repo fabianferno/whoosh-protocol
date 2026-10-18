@@ -1,8 +1,9 @@
 import './styles.css';
 import { estimateSeconds, PacketInbox, prepareSecureSend } from '../app/secure.ts';
+import { mountArkivPanel } from './arkivPanel.ts';
 import { CaptureError, startCapture, type Capture } from '../audio/capture.ts';
 import { CarrierGate } from '../audio/gate.ts';
-import { ready, TX_RATE, WaveDecoder, type Band } from '../audio/ggwave.ts';
+import { encodeBytes, ready, TX_RATE, WaveDecoder, type Band } from '../audio/ggwave.ts';
 import { playSamples, type Playback } from '../audio/player.ts';
 import { BAR_HZ, barLevels } from '../audio/spectrum.ts';
 import { MAX_PLAINTEXT_BYTES } from '../packet/format.ts';
@@ -20,7 +21,7 @@ const radio = (name: string): Band => document.querySelector<HTMLInputElement>(`
 const byteLength = (s: string) => new TextEncoder().encode(s).length;
 
 // ---- tabs ----
-const SCREENS = ['send', 'receive', 'group', 'diag'];
+const SCREENS = ['send', 'receive', 'group', 'arkiv', 'diag'];
 const tabs = [...document.querySelectorAll<HTMLButtonElement>('[role=tab]')];
 function showTab(name: string): void {
   for (const tab of tabs) tab.setAttribute('aria-selected', String(tab.dataset.tab === name));
@@ -35,6 +36,13 @@ interface Group {
   identity: SenderIdentity;
 }
 let group: Group | null = null;
+/** Every message this device has accepted, whether heard or pulled from Arkiv; lives as long as the group key. */
+let inboxAll: PacketInbox | null = null;
+const setGroup = (next: Group | null): void => {
+  group = next;
+  inboxAll = next ? new PacketInbox(next.keys) : null;
+  arkiv?.groupChanged();
+};
 
 const groupStatus = $('groupStatus');
 const newKey = $('newKey');
@@ -51,7 +59,7 @@ async function activate(passphrase: string): Promise<void> {
   groupStatus.textContent = 'Deriving key (this takes a moment on purpose)...';
   const keys = await deriveGroupKeys(passphrase);
   const stored = await saveKeys(keys);
-  group = { keys, identity: new SenderIdentity() };
+  setGroup({ keys, identity: new SenderIdentity() });
   renderGroup(stored ? '' : ' It could not be saved, so it will be forgotten when you close the app.');
 }
 
@@ -84,7 +92,7 @@ joinBtn.addEventListener('click', () =>
 );
 $('leaveBtn').addEventListener('click', async () => {
   await clearKeys();
-  group = null;
+  setGroup(null);
   newKey.hidden = true;
   keyWords.textContent = '';
   stopListening();
@@ -92,7 +100,7 @@ $('leaveBtn').addEventListener('click', async () => {
 });
 
 void loadKeys().then((keys) => {
-  if (keys) group = { keys, identity: new SenderIdentity() };
+  if (keys) setGroup({ keys, identity: new SenderIdentity() });
   renderGroup();
 });
 
@@ -181,7 +189,6 @@ const inbox = $<HTMLUListElement>('inbox');
 let capture: Capture | null = null;
 let gate: CarrierGate | null = null;
 let decoder: WaveDecoder | null = null;
-let packets: PacketInbox | null = null;
 let bars: number[] = new Array(BAR_HZ.length).fill(0);
 let decoded = 0;
 let heard = 0;
@@ -189,7 +196,7 @@ let heard = 0;
 const trace = { opens: 0, closes: 0, fedSeconds: 0, firstOpenSeconds: 0, listenedSeconds: 0, log: [] as string[] };
 const note = (line: string) => { trace.log.push(line); if (trace.log.length > 6) trace.log.shift(); };
 
-function show(message: string): void {
+function addMessage(message: string): void {
   decoded++;
   const li = document.createElement('li');
   const body = document.createElement('p');
@@ -198,6 +205,10 @@ function show(message: string): void {
   meta.textContent = new Date().toLocaleTimeString();
   li.append(body, meta);
   inbox.prepend(li);
+}
+
+function show(message: string): void {
+  addMessage(message);
   // One message per listen: stop the microphone as soon as it has arrived.
   stopListening();
   recvStatus.textContent = 'Message received. Tap Start listening for another.';
@@ -205,7 +216,8 @@ function show(message: string): void {
 
 async function onPacket(packet: Uint8Array): Promise<void> {
   heard++;
-  const got = await packets?.accept(packet);
+  arkiv.settle(packet);
+  const got = await inboxAll?.accept(packet);
   if (got) show(got.text);
 }
 
@@ -239,7 +251,6 @@ function stopListening(): void {
   gate = null;
   decoder?.free();
   decoder = null;
-  packets = null;
   bars = bars.map(() => 0);
   level.style.width = '0%';
   listenBtn.textContent = 'Start listening';
@@ -259,7 +270,6 @@ listenBtn.addEventListener('click', async () => {
   listenBtn.disabled = true;
   try {
     await ready();
-    packets = new PacketInbox(group.keys);
     const started = await startCapture(onSamples);
     capture = started;
     gate = new CarrierGate(started.rate, radio('rxband'));
@@ -274,6 +284,23 @@ listenBtn.addEventListener('click', async () => {
   } finally {
     listenBtn.disabled = false;
   }
+});
+
+// ---- arkiv gateway ----
+async function replay(packet: Uint8Array): Promise<void> {
+  if (capture) stopListening(); // half-duplex: do not hear our own replay
+  const samples = await encodeBytes(packet, radio('band'));
+  await playSamples(samples, TX_RATE).done;
+}
+
+const arkiv = mountArkivPanel({
+  getKeys: () => group?.keys ?? null,
+  hasLocally: (mid) => inboxAll?.has(mid) ?? false,
+  deliver: async (packet) => {
+    const got = await inboxAll?.accept(packet);
+    if (got) addMessage(got.text);
+  },
+  replay,
 });
 
 // ---- diagnostics ----

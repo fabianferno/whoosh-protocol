@@ -21,7 +21,8 @@
         <button class="tab" role="tab" data-tab="send" aria-selected="true">Send</button>
         <button class="tab" role="tab" data-tab="receive" aria-selected="false">Receive</button>
         <button class="tab" role="tab" data-tab="group" aria-selected="false">Group</button>
-        <button class="tab" role="tab" data-tab="diag" aria-selected="false">Diagnostics</button>
+        <button class="tab" role="tab" data-tab="arkiv" aria-selected="false">Arkiv</button>
+        <button class="tab" role="tab" data-tab="diag" aria-selected="false">Debug</button>
       </nav>
 
       <section id="send" class="panel panel-screws" role="tabpanel">
@@ -72,6 +73,23 @@
           <button id="leaveBtn" class="btn btn-secondary btn-block" type="button">Forget key on this device</button>
         </div>
         <p class="field-hint">What this does not give you: no forward secrecy (a leaked key decrypts every past message, including any on Arkiv); no sender authentication (any member can forge a message as another); no revocation (removing someone means everyone moves to a new passphrase). Whoosh is not covert: near-ultrasound is visible to any spectrum analyser.</p>
+      </section>
+
+      <section id="arkiv" class="panel panel-screws" role="tabpanel" hidden>
+        <h2 class="eyebrow">Arkiv gateway</h2>
+        <p class="field-hint">A phone with internet can bridge islands. It saves each message it hears to Arkiv (encrypted, exactly as heard) and replays messages that arrive on Arkiv over sound.</p>
+        <p id="arkivStatus" class="status" role="status">Starting...</p>
+        <h2 class="eyebrow">Gateway wallet</h2>
+        <p id="walletAddress" class="words mono">...</p>
+        <p id="walletBalance" class="field-hint">Checking balance...</p>
+        <div class="actions">
+          <a id="faucetLink" class="btn btn-secondary btn-block" target="_blank" rel="noopener">Open the Tiramisu faucet</a>
+          <button id="refreshBalanceBtn" class="btn btn-secondary btn-block" type="button">Refresh balance</button>
+        </div>
+        <label class="switch switch-row"><input id="settleToggle" type="checkbox" /><span>Save heard messages to Arkiv</span></label>
+        <label class="switch switch-row"><input id="watchToggle" type="checkbox" /><span>Watch Arkiv and replay over sound</span></label>
+        <p class="field-hint">This wallet is a random key kept on this device only. Every message you settle is linked to its address. Use synthetic messages for demos.</p>
+        <ul id="arkivLog" class="inbox"></ul>
       </section>
 
       <section id="diag" class="panel panel-screws" role="tabpanel" hidden>
