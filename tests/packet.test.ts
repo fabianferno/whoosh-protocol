@@ -5,7 +5,10 @@ import {
   aadOf, FLAG_RELAYABLE, HEADER_BYTES, MAX_PLAINTEXT_BYTES, messageIdHex, MIN_PACKET_BYTES, nonceOf, packHeader,
   PacketType, parseHeader, TAG_BYTES,
 } from '../src/packet/format.ts';
-import { deriveGroupKeys, generatePassphrase, normalizePassphrase, PBKDF2_ITERATIONS, type GroupKeys } from '../src/packet/keys.ts';
+import {
+  deriveGroupKeys, generateGroupKey, generatePassphrase, normalizePassphrase, passphraseBits, PassphraseError,
+  PBKDF2_ITERATIONS, type GroupKeys,
+} from '../src/packet/keys.ts';
 import { decodeHave, decodeWant, encodeHave, encodeWant } from '../src/packet/payloads.ts';
 import { SenderIdentity } from '../src/packet/session.ts';
 import { WORDS } from '../src/message/dictionary.ts';
@@ -17,12 +20,13 @@ const text = (s: string) => new TextEncoder().encode(s);
 let keys: GroupKeys;
 let other: GroupKeys;
 beforeAll(async () => {
-  keys = await deriveGroupKeys('amber lunar fossil quick river zoo', FAST);
-  other = await deriveGroupKeys('amber lunar fossil quick river abandon', FAST);
+  keys = await deriveGroupKeys('lunar fossil quick river zoo abandon', FAST);
+  other = await deriveGroupKeys('lunar fossil quick river zoo ability', FAST);
 });
 
+let freshSeq = 1000;
 const msg = (k: GroupKeys, body: string, over: { seq?: number; ttl?: number; sender?: number } = {}) =>
-  seal(k, { type: PacketType.MSG, sender: over.sender ?? 0xdeadbeef, seq: over.seq ?? 7, ts: NOW, ttl: over.ttl }, text(body));
+  seal(k, { type: PacketType.MSG, sender: over.sender ?? 0xdeadbeef, seq: over.seq ?? freshSeq++, ts: NOW, ttl: over.ttl }, text(body));
 
 describe('header layout', () => {
   it('packs every field at its documented offset and parses it back', () => {
@@ -84,8 +88,8 @@ describe('seal and open', () => {
   });
 
   it('produces different ciphertext for the same text under different seq values', async () => {
-    const a = await msg(keys, 'same words', { seq: 1 });
-    const b = await msg(keys, 'same words', { seq: 2 });
+    const a = await msg(keys, 'same words');
+    const b = await msg(keys, 'same words');
     expect(a.slice(HEADER_BYTES, -TAG_BYTES)).not.toEqual(b.slice(HEADER_BYTES, -TAG_BYTES));
   });
 
@@ -129,6 +133,43 @@ describe('rejects anything that is not authentic', () => {
     const packet = await msg(keys, 'hi');
     packet[0] = (packet[0] & 0x0f) | 0x20;
     expect(await open(keys, packet)).toBeNull();
+  });
+});
+
+describe('nonce safety', () => {
+  const base = { type: PacketType.MSG, sender: 0x0badf00d, ts: NOW, fragCount: 2 } as const;
+
+  it('gives each fragment of a message its own keystream', async () => {
+    const p0 = text('A'.repeat(40));
+    const p1 = text('B'.repeat(40));
+    const f0 = await seal(keys, { ...base, seq: 500, fragIndex: 0 }, p0);
+    const f1 = await seal(keys, { ...base, seq: 500, fragIndex: 1 }, p1);
+    const c0 = f0.slice(HEADER_BYTES, HEADER_BYTES + 40);
+    const c1 = f1.slice(HEADER_BYTES, HEADER_BYTES + 40);
+    // A shared nonce means a shared keystream, so c0 xor c1 would equal p0 xor p1 and leak both texts.
+    expect(c0.every((v, i) => (v ^ c1[i]) === (p0[i] ^ p1[i]))).toBe(false);
+    expect(nonceOf(f0)).not.toEqual(nonceOf(f1));
+  });
+
+  it('opens every fragment of a message that shares sender, seq and timestamp', async () => {
+    for (let i = 0; i < 4; i++) {
+      const packet = await seal(keys, { ...base, seq: 501, fragIndex: i, fragCount: 4 }, text(`part ${i}`));
+      const opened = await open(keys, packet);
+      expect(new TextDecoder().decode(opened!.plaintext)).toBe(`part ${i}`);
+      expect(opened!.header.fragIndex).toBe(i);
+    }
+  });
+
+  it('refuses to seal twice under the same nonce with one key', async () => {
+    await seal(keys, { ...base, seq: 502, fragIndex: 0 }, text('first'));
+    await expect(seal(keys, { ...base, seq: 502, fragIndex: 0 }, text('second'))).rejects.toThrow(/nonce/i);
+    // a different key has its own history
+    await expect(seal(other, { ...base, seq: 502, fragIndex: 0 }, text('second'))).resolves.toBeDefined();
+  });
+
+  it('does not burn a nonce when sealing fails validation', async () => {
+    await expect(seal(keys, { ...base, seq: 503, fragIndex: 0 }, text('x'.repeat(200)))).rejects.toThrow(/limit/);
+    await expect(seal(keys, { ...base, seq: 503, fragIndex: 0 }, text('ok'))).resolves.toBeDefined();
   });
 });
 
@@ -177,7 +218,7 @@ describe('channel tag', () => {
 
 describe('keys', () => {
   it('derives interoperable keys from the same passphrase, however it is typed', async () => {
-    const a = await deriveGroupKeys('Amber  Lunar fossil quick river ZOO ', FAST);
+    const a = await deriveGroupKeys('Lunar  Fossil quick river ZOO  abandon ', FAST);
     const packet = await msg(a, 'typed differently');
     expect((await openText(keys, packet))?.text).toBe('typed differently');
     expect(normalizePassphrase('  A  b\tC ')).toBe('a b c');
@@ -191,7 +232,7 @@ describe('keys', () => {
   });
 
   it('rejects an empty passphrase', async () => {
-    await expect(deriveGroupKeys('   ', FAST)).rejects.toThrow();
+    await expect(deriveGroupKeys('   ', FAST)).rejects.toMatchObject({ code: 'empty' });
   });
 
   it('generates six words from the dictionary', () => {
@@ -199,6 +240,55 @@ describe('keys', () => {
     expect(words).toHaveLength(6);
     for (const w of words) expect(WORDS).toContain(w);
     expect(generatePassphrase()).not.toBe(generatePassphrase());
+  });
+});
+
+describe('passphrase strength', () => {
+  const weak = [
+    'hello', 'password123', 'correct horse battery staple',
+    'lunar fossil quick river zoo',                 // five words
+    'lunar fossil quick river zoo notaword',        // a word outside the list
+    'zoo zoo zoo zoo zoo zoo',                      // repeated words
+    'lunar fossil quick river zoo lunar',           // one repeat
+    'a'.repeat(80),                                 // long but trivial
+    'abcdef0123456789abcdef0123456789',             // hex, but only 128 bits
+    '0'.repeat(64),                                 // right length, but an all-zero key
+  ];
+
+  it.each(weak)('rejects %j', async (secret) => {
+    await expect(deriveGroupKeys(secret, FAST)).rejects.toBeInstanceOf(PassphraseError);
+    await expect(deriveGroupKeys(secret, FAST)).rejects.toMatchObject({ code: 'weak' });
+  });
+
+  it('measures six distinct dictionary words as 66 bits and a raw key as 256', () => {
+    expect(passphraseBits('lunar fossil quick river zoo abandon')).toBe(66);
+    expect(passphraseBits('lunar fossil quick river zoo abandon ability')).toBe(77);
+    expect(passphraseBits(generateGroupKey())).toBe(256);
+    expect(passphraseBits('hello')).toBe(0);
+  });
+
+  it('accepts a generated passphrase and a generated 256-bit key, and they never collide', async () => {
+    await expect(deriveGroupKeys(generatePassphrase(), FAST)).resolves.toBeDefined();
+    const raw = generateGroupKey();
+    expect(raw).toMatch(/^[0-9a-f]{64}$/);
+    expect(raw).not.toBe(generateGroupKey());
+    await expect(deriveGroupKeys(raw)).resolves.toBeDefined();
+  });
+
+  it('derives interoperable keys from a raw key, with no slow PBKDF2 step', async () => {
+    const raw = generateGroupKey();
+    const t0 = performance.now();
+    const a = await deriveGroupKeys(raw);
+    const b = await deriveGroupKeys(raw.toUpperCase());
+    expect(performance.now() - t0).toBeLessThan(500);
+    expect((await openText(b, await sealText(a, new SenderIdentity(), 'raw key works', NOW)))?.text).toBe('raw key works');
+    expect(await open(keys, await sealText(a, new SenderIdentity(), 'x', NOW))).toBeNull();
+  });
+
+  it('generates at least six words and never fewer', () => {
+    expect(generatePassphrase(8).split(' ')).toHaveLength(8);
+    expect(() => generatePassphrase(5)).toThrow();
+    expect(new Set(generatePassphrase().split(' ')).size).toBe(6);
   });
 });
 

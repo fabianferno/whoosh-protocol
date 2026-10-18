@@ -18,6 +18,17 @@ export interface SealParams {
   fragCount?: number;
 }
 
+/** Nonces already used for sealing, per key, for this session. Reusing one under AES-GCM is catastrophic. */
+const used = new WeakMap<CryptoKey, Set<string>>();
+
+function claimNonce(key: CryptoKey, nonce: Uint8Array): void {
+  const id = Array.from(nonce, (b) => b.toString(16).padStart(2, '0')).join('');
+  let seen = used.get(key);
+  if (!seen) used.set(key, (seen = new Set()));
+  if (seen.has(id)) throw new Error('Refusing to reuse a nonce: take a new seq from SenderIdentity');
+  seen.add(id);
+}
+
 export interface Opened {
   header: Header;
   plaintext: Uint8Array;
@@ -27,7 +38,8 @@ export interface Opened {
  * header (15) | AES-256-GCM ciphertext | tag (12). The header is the associated data (ttl zeroed) and
  * supplies the nonce.
  *
- * Fragments of one message must each use a fresh seq: the nonce does not include the fragment index.
+ * The nonce includes the fragment byte, so fragments of one message may share sender, seq and ts. Sealing
+ * twice with the same nonce under one key throws.
  */
 export async function seal(keys: GroupKeys, p: SealParams, plaintext: Uint8Array<ArrayBuffer>): Promise<Uint8Array<ArrayBuffer>> {
   if (plaintext.length > MAX_PLAINTEXT_BYTES) throw new Error(`Message is ${plaintext.length} bytes; the limit is ${MAX_PLAINTEXT_BYTES}`);
@@ -41,8 +53,10 @@ export async function seal(keys: GroupKeys, p: SealParams, plaintext: Uint8Array
     type: p.type, ttl, flags: p.flags ?? FLAG_RELAYABLE, chan: await channelTag(keys, dayOf(p.ts)),
     sender: p.sender, seq: p.seq, fragIndex, fragCount, ts: p.ts,
   });
+  const nonce = nonceOf(header);
+  claimNonce(keys.enc, nonce);
   const body = new Uint8Array(
-    await crypto.subtle.encrypt({ name: 'AES-GCM', iv: nonceOf(header), additionalData: aadOf(header), tagLength: TAG_BYTES * 8 }, keys.enc, plaintext),
+    await crypto.subtle.encrypt({ name: 'AES-GCM', iv: nonce, additionalData: aadOf(header), tagLength: TAG_BYTES * 8 }, keys.enc, plaintext),
   );
   const packet = new Uint8Array(HEADER_BYTES + body.length);
   packet.set(header);

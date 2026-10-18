@@ -79,7 +79,7 @@ describe('ggwave carries packets', () => {
   });
 
   it('delivers an encrypted packet end to end through noise', async () => {
-    const keys = await deriveGroupKeys('amber lunar fossil quick river zoo', 1000);
+    const keys = await deriveGroupKeys('lunar fossil quick river zoo abandon', 1000);
     const packet = await sealText(keys, new SenderIdentity(), 'meet at the old bridge at noon', 1_790_000_000);
     const wave = ch.addNoise(ch.offset(await encodeBytes(packet, 'ultrasound'), 6000), 6, ch.rng(21));
     const rx = await TextDecoderStream.create(TX_RATE);

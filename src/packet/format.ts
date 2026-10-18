@@ -73,12 +73,19 @@ export function parseHeader(bytes: Uint8Array): Header | null {
   };
 }
 
-/** sender (4) | seq (2) | ts (4) | 0x0000. No bytes of it go over the air. */
+/**
+ * sender (4) | seq (2) | ts (4) | frag byte | 0x00. No bytes of it go over the air.
+ *
+ * The PRD's nonce ends in 0x0000. The first of those bytes carries the fragment byte instead, so the
+ * fragments of one message (same sender, seq and ts) never share a nonce. With a shared nonce, GCM
+ * would reuse a keystream and leak the XOR of two plaintexts.
+ */
 export function nonceOf(header: Uint8Array): Uint8Array<ArrayBuffer> {
   const out = new Uint8Array(12);
   out.set(header.subarray(4, 8), 0);
   out.set(header.subarray(8, 10), 4);
   out.set(header.subarray(11, 15), 6);
+  out[10] = header[10];
   return out;
 }
 
