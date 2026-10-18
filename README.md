@@ -16,7 +16,7 @@ Design and scope: [prd.md](prd.md). Primary track: Censorship Resistance. Second
 Working and tested: ultrasound and audible send/receive between two devices, encryption and channel filtering, the detector gate,
 the Arkiv gateway logic (against an in-memory store), the burner wallet and offline outbox, the loopback self-test.
 Not built: the relay mesh (listen-before-talk, ttl flooding, HAVE/WANT sync), QR key sharing, a demo recording.
-Not yet exercised: writes to the real Tiramisu chain (the testnet faucet was empty when this was built; see the friction report).
+Exercised on the real chain: a message heard by a phone was settled to Tiramisu and read back and decrypted by a separate client (see [arkiv/evidence.md](arkiv/evidence.md)). The testnet faucet was empty when this was built (see the friction report), so funding came from a person.
 Our own test results are in [tests/](tests/); nothing here has been tested on an iPhone.
 
 ## Run it
@@ -49,7 +49,7 @@ If the high band does not work on a device (some microphones cut it), switch bot
 ### Arkiv gateway
 
 1. **Arkiv** tab: the app creates a random burner wallet on the device. Fund its address with GLM from the
-   [Tiramisu faucet](https://hub.arkiv.network/faucet). A write costs about 0.00004 GLM at 1 gwei.
+   [Tiramisu faucet](https://hub.arkiv.network/faucet). A write cost about 0.0001 GLM when measured (1 gwei gas price).
 2. Turn on *Save heard messages to Arkiv* to settle what the device hears, and *Watch Arkiv and replay over sound* to bring a
    group's messages down and play them over the speaker.
 3. Live test against the real chain (skipped by default):

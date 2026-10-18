@@ -2,6 +2,16 @@
 
 Written while building. Each entry says how it was observed. Newest first.
 
+## 2026-10-19
+
+1. **Gas guidance is missing, and a plain estimate understates it.** `eth_estimateGas` for a transaction with entity-sized calldata
+   to a dummy address gave about 33,000 gas (0.000033 GLM at 1 gwei). A real `createEntity` from the SDK cost about 0.000106 GLM,
+   roughly three times as much, so the Arkiv operation does more than its calldata suggests. Neither the README nor the Tiramisu
+   docs page says what a write costs, so a builder cannot size a wallet or a faucet claim. Worth a line in the docs.
+2. **What worked well:** a `u64` timestamp attribute with a `gte` range filter and an equality filter on string attributes returned
+   the new entity within seconds of the write, and the payload came back byte-identical. The `select().where(...).limit().fetch()`
+   builder and typed attributes were easy to use once the README's pointers were found.
+
 ## 2026-10-18
 
 0. **The faucet ran dry on the last day, and its error does not say so.** Claiming from `hub.arkiv.network/faucet` failed with a raw
