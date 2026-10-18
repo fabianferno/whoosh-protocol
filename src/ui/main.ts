@@ -5,6 +5,9 @@ import { CaptureError, startCapture, type Capture } from '../audio/capture.ts';
 import { playSamples, type Playback } from '../audio/player.ts';
 import { MessageError } from '../message/message.ts';
 import { TONE_COUNT, GROUPS } from '../modem/params.ts';
+import { mountKeys } from './design/keys.ts';
+
+mountKeys();
 
 const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
 

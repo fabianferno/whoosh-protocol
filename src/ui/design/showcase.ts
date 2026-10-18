@@ -2,8 +2,10 @@
 import './components.css';
 import './showcase.css';
 import { mountIcons } from './icons.ts';
+import { mountKeys } from './keys.ts';
 
 mountIcons();
+mountKeys();
 
 // Keep the slider fill in step with its value.
 for (const slider of document.querySelectorAll<HTMLInputElement>('.slider')) {

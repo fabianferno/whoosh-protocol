@@ -111,6 +111,17 @@
   --space-8: 32px;
   --control-h: 44px;
   --control-h-lg: 48px;
+  /* keycaps: one height for every key, a fixed skirt, and how far a press travels */
+  --key-h: 52px;
+  --key-r: 10px;
+  --skirt-t: 4px;
+  --skirt-l: 6px;
+  --skirt-r: 8px;
+  --skirt-b: 10px;
+  --key-travel: 4px;
+
+  /* ---- matte keycap texture (grey noise, blended soft-light over the face) ---- */
+  --grain-matte: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='m'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.4' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='linear' slope='0' intercept='0.55'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23m)'/%3E%3C/svg%3E");
 
   /* ---- grain overlay ---- */
   --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.14 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");

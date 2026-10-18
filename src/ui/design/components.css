@@ -105,131 +105,148 @@ textarea {
     var(--screw) left bottom / 10px 10px no-repeat, var(--screw) right bottom / 10px 10px no-repeat;
 }
 
-/* ============ buttons ============ */
+/* ============ keycaps ============
+ * Every pressable button is a sculpted keycap: a sloped skirt (the element itself)
+ * around a smaller matte top face (::before). Light comes from the top left, so the
+ * top and left skirt catch it and the right and bottom skirt fall into shade.
+ * Variants only set the colour variables. Every key shares one height (--key-h) and
+ * one skirt; only the width follows the content.
+ */
+.btn,
+.icon-btn,
+.page-btn {
+  --key: #8a8787;
+  --key-hi: #a6a3a2;
+  --key-lo: #444242;
+  --key-ink: var(--ink);
+  position: relative;
+  isolation: isolate;
+  box-sizing: border-box;
+  height: var(--key-h);
+  min-width: var(--key-h);
+  padding: var(--skirt-t) var(--skirt-r) var(--skirt-b) var(--skirt-l);
+  border: 0;
+  border-radius: var(--key-r);
+  color: var(--key-ink);
+  background: linear-gradient(90deg, rgb(255 255 255 / 0.06), transparent 18% 70%, rgb(0 0 0 / 0.28)),
+    linear-gradient(180deg, var(--key-hi) 0%, color-mix(in srgb, var(--key-hi) 50%, var(--key)) 18%, var(--key) 45%,
+      color-mix(in srgb, var(--key) 55%, var(--key-lo)) 75%, var(--key-lo) 100%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2), inset 0 -1px 0 rgb(0 0 0 / 0.35), 0 1px 1px rgb(0 0 0 / 0.55),
+    0 6px 10px -2px rgb(0 0 0 / 0.5), 0 16px 26px -10px rgb(0 0 0 / 0.55);
+  text-shadow: none;
+  cursor: pointer;
+  user-select: none;
+  /* release: spring back up with a little overshoot */
+  transition: transform 260ms cubic-bezier(0.25, 1.8, 0.5, 1), box-shadow 220ms ease-out, filter 160ms;
+}
+.btn::before,
+.icon-btn::before,
+.page-btn::before {
+  /* the matte top face */
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: var(--skirt-t) var(--skirt-r) var(--skirt-b) var(--skirt-l);
+  border-radius: calc(var(--key-r) - 3px);
+  /* same plastic as the cap; the dish is shaded at the top rim and catches light at the bottom */
+  background: var(--grain-matte),
+    linear-gradient(180deg, color-mix(in srgb, var(--key) 90%, #000) 0%, var(--key) 22%, var(--key) 78%,
+      color-mix(in srgb, var(--key) 94%, #fff) 100%),
+    linear-gradient(90deg, rgb(255 255 255 / 0.04), transparent 40%);
+  background-blend-mode: soft-light, normal, normal;
+  box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.1), inset 0 -1px 1px rgb(255 255 255 / 0.07), 0 0 2px 1px rgb(0 0 0 / 0.08),
+    0 2px 4px -1px rgb(0 0 0 / 0.18);
+}
+.btn:hover:not(:disabled),
+.icon-btn:hover,
+.page-btn:hover {
+  filter: brightness(1.05);
+}
+.btn:active:not(:disabled),
+.btn.is-down:not(:disabled),
+.icon-btn:active,
+.icon-btn.is-down,
+.page-btn:active,
+.page-btn.is-down {
+  /* press: bottom out fast, the shadow tucks under the key */
+  transform: translateY(var(--key-travel));
+  filter: brightness(0.94);
+  transition: transform 55ms ease-out, box-shadow 55ms ease-out, filter 55ms;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.14), inset 0 -1px 0 rgb(0 0 0 / 0.35), 0 1px 0 rgb(0 0 0 / 0.65),
+    0 2px 3px -1px rgb(0 0 0 / 0.6), 0 4px 8px -6px rgb(0 0 0 / 0.5);
+}
+
+/* colours */
+.btn-primary,
+.page-btn[aria-current='page'] {
+  --key: #e8531f;
+  --key-hi: #f8703b;
+  --key-lo: #8a2006;
+  --key-ink: #fff8f3;
+}
+.btn-secondary,
+.page-btn {
+  --key: #3d3b3b;
+  --key-hi: #575454;
+  --key-lo: #141313;
+  --key-ink: #eeeeee;
+}
+.btn-tertiary,
+.icon-btn {
+  --key: #8a8787;
+  --key-hi: #a8a5a4;
+  --key-lo: #444242;
+  --key-ink: var(--ink);
+}
+.btn:disabled,
+.btn[aria-disabled='true'] {
+  --key: #6c6a6a;
+  --key-hi: #7a7877;
+  --key-lo: #4f4d4d;
+  --key-ink: #8f8c8b;
+  filter: none;
+  transform: none;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.12), 0 1px 1px rgb(0 0 0 / 0.4), 0 3px 6px -2px rgb(0 0 0 / 0.35);
+  cursor: not-allowed;
+}
+
+/* text keys grow sideways with their label; icon and page keys are square */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  min-height: var(--control-h);
-  padding: 0 var(--space-6);
-  border: 0;
-  border-radius: var(--r-md);
+  padding-inline: calc(var(--space-6) + var(--skirt-l)) calc(var(--space-6) + var(--skirt-r));
   font-size: var(--fs-body);
   font-weight: 500;
   line-height: 1;
-  cursor: pointer;
-  user-select: none;
-  transition: filter 120ms, transform 80ms, box-shadow 120ms;
-}
-.btn:active:not(:disabled) {
-  transform: translateY(2px);
+  white-space: nowrap;
 }
 .btn-block {
   display: flex;
   width: 100%;
 }
-.btn-lg {
-  min-height: var(--control-h-lg);
-}
 .btn-sm {
-  min-height: 32px;
-  padding: 0 var(--space-5);
-  border-radius: var(--r-sm);
+  padding-inline: calc(var(--space-4) + var(--skirt-l)) calc(var(--space-4) + var(--skirt-r));
   font-size: var(--fs-small);
 }
-.btn-primary {
-  background: var(--gloss), var(--grad-primary);
-  color: var(--on-accent);
-  box-shadow: var(--shadow-accent);
-  text-shadow: 0 -1px 0 rgb(120 30 0 / 0.35);
-}
-.btn-primary:hover:not(:disabled) {
-  background: var(--gloss), var(--grad-primary-hover);
-}
-.btn-primary:active:not(:disabled) {
-  background: var(--grad-primary);
-  box-shadow: var(--shadow-pressed-accent);
-}
-.btn-secondary {
-  background: var(--gloss), var(--grad-secondary);
-  color: var(--text);
-  box-shadow: var(--shadow-dark-key);
-  text-shadow: var(--engrave);
-}
-.btn-secondary:hover:not(:disabled) {
-  filter: brightness(1.08);
-}
-.btn-secondary:active:not(:disabled) {
-  background: var(--grad-secondary);
-  box-shadow: var(--shadow-pressed);
-}
-.btn-tertiary {
-  background: var(--gloss), var(--grad-raised-soft);
-  color: var(--ink);
-  box-shadow: var(--shadow-raised);
-  text-shadow: var(--emboss);
-}
-.btn-tertiary:active:not(:disabled) {
-  background: var(--grad-raised-soft);
-  box-shadow: var(--shadow-pressed);
-}
-.btn-tertiary:hover:not(:disabled) {
-  filter: brightness(1.06);
-}
-.btn:disabled,
-.btn[aria-disabled='true'] {
-  background: #767473;
-  color: #8f8c8b;
-  box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.25), 0 0 0 1px rgb(0 0 0 / 0.25), 0 1px 0 rgb(255 255 255 / 0.18);
-  text-shadow: 0 1px 0 rgb(255 255 255 / 0.12);
-  cursor: not-allowed;
-}
-
-/* icon buttons */
 .icon-btn {
   display: inline-grid;
   place-items: center;
-  width: 52px;
-  height: 52px;
-  padding: 0;
-  border: 0;
-  border-radius: var(--r-md);
-  background: radial-gradient(120% 90% at 50% 100%, rgb(255 255 255 / 0.12), transparent 60%), var(--gloss), var(--grad-raised);
-  color: var(--ink);
-  box-shadow: var(--shadow-raised);
-  cursor: pointer;
-  transition: filter 120ms, transform 80ms;
+  width: var(--key-h);
 }
 .icon-btn .icon {
-  filter: drop-shadow(0 1px 0 rgb(255 255 255 / 0.35));
-}
-.icon-btn .icon {
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   stroke-width: 2;
-}
-.icon-btn:hover {
-  filter: brightness(1.06);
-}
-.icon-btn:active {
-  transform: translateY(2px);
-  background: var(--grad-raised);
-  box-shadow: var(--shadow-pressed);
-}
-.icon-btn-sm {
-  width: 36px;
-  height: 36px;
-  border-radius: var(--r-sm);
-}
-.icon-btn-sm .icon {
-  width: 18px;
-  height: 18px;
 }
 .icon-btn-ghost {
   background: none;
   box-shadow: none;
   color: inherit;
+}
+.icon-btn-ghost::before {
+  display: none;
 }
 
 /* ============ inputs ============ */
@@ -456,8 +473,13 @@ textarea.input {
   box-shadow: 0 0 8px rgb(255 90 31 / 0.85), 0 0 18px rgb(255 90 31 / 0.45), inset 0 -1px 2px rgb(110 25 0 / 0.5);
 }
 
-/* ============ toggle switch ============ */
+/* ============ toggle switch ============
+ * A keycap thumb that slides in a recessed slot. Same height as every key.
+ */
 .switch {
+  --slot-w: 100px;
+  --thumb-w: 42px;
+  --slot-pad: 4px;
   display: inline-flex;
   flex-direction: column;
   align-items: center;
@@ -467,35 +489,54 @@ textarea.input {
 .switch input {
   appearance: none;
   position: relative;
-  width: 92px;
-  height: 46px;
+  flex: none;
+  width: var(--slot-w);
+  height: var(--key-h);
   margin: 0;
-  border-radius: var(--r-pill);
-  background: linear-gradient(180deg, #353535, #444444);
-  box-shadow: inset 0 4px 8px rgb(0 0 0 / 0.6), inset 0 1px 2px rgb(0 0 0 / 0.6), inset 0 0 0 1px rgb(0 0 0 / 0.4),
+  border-radius: var(--key-r);
+  background: linear-gradient(180deg, #2f2e2e, #403f3f);
+  box-shadow: inset 0 4px 8px rgb(0 0 0 / 0.65), inset 0 1px 2px rgb(0 0 0 / 0.6), inset 0 0 0 1px rgb(0 0 0 / 0.45),
     0 -1px 0 rgb(0 0 0 / 0.25), 0 1px 0 rgb(255 255 255 / 0.22);
   cursor: pointer;
-  transition: background 180ms;
+  transition: background 200ms, box-shadow 200ms;
 }
 .switch input::after {
+  /* the keycap thumb: matte face, lit top/left skirt, shaded right/bottom skirt, grip ridges */
   content: '';
   position: absolute;
-  top: 4px;
-  left: 4px;
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgb(0 0 0 / 0.12) 0 22%, transparent 24%), var(--metal);
-  box-shadow: var(--shadow-knob);
-  transition: translate 200ms cubic-bezier(0.3, 0.7, 0.3, 1);
+  top: var(--slot-pad);
+  left: var(--slot-pad);
+  width: var(--thumb-w);
+  height: calc(var(--key-h) - 2 * var(--slot-pad));
+  border-radius: calc(var(--key-r) - 3px);
+  background: repeating-linear-gradient(90deg, rgb(0 0 0 / 0.28) 0 1px, rgb(255 255 255 / 0.22) 1px 2px, transparent 2px 5px)
+      center 42% / 14px 14px no-repeat,
+    var(--grain-matte), linear-gradient(180deg, #a6a3a2 0%, #8c8989 28%, #858282 68%, #5f5d5d 100%);
+  background-blend-mode: normal, soft-light, normal;
+  box-shadow: inset 0 2px 1px -1px rgb(255 255 255 / 0.45), inset 3px 0 3px -2px rgb(255 255 255 / 0.18),
+    inset -5px 0 4px -3px rgb(0 0 0 / 0.35), inset 0 -8px 5px -4px rgb(0 0 0 / 0.45), 0 0 0 1px rgb(0 0 0 / 0.45),
+    0 3px 4px rgb(0 0 0 / 0.5), 0 8px 12px -4px rgb(0 0 0 / 0.45);
+  /* slide with a little overshoot; the press dip is a separate, faster transform */
+  transition: translate 300ms cubic-bezier(0.3, 1.45, 0.5, 1), transform 160ms ease-out, box-shadow 160ms ease-out;
+}
+.switch input:active::after {
+  transform: translateY(2px) scaleX(1.06);
+  transition: translate 300ms cubic-bezier(0.3, 1.45, 0.5, 1), transform 50ms ease-out, box-shadow 50ms ease-out;
+  box-shadow: inset 0 2px 1px -1px rgb(255 255 255 / 0.4), inset 3px 0 3px -2px rgb(255 255 255 / 0.15),
+    inset -5px 0 4px -3px rgb(0 0 0 / 0.35), inset 0 -8px 5px -4px rgb(0 0 0 / 0.45), 0 0 0 1px rgb(0 0 0 / 0.5),
+    0 1px 2px rgb(0 0 0 / 0.55), 0 3px 6px -3px rgb(0 0 0 / 0.45);
 }
 .switch input:checked {
-  background: linear-gradient(180deg, #c93d10 0%, #ea5823 35%, #ff6a2c 100%);
-  box-shadow: inset 0 4px 7px rgb(100 20 0 / 0.6), inset 0 0 0 1px rgb(110 25 0 / 0.45), 0 -1px 0 rgb(0 0 0 / 0.25),
-    0 1px 0 rgb(255 255 255 / 0.22), 0 0 16px rgb(255 90 31 / 0.35);
+  background: linear-gradient(180deg, #b9380e 0%, #e65521 35%, #ff6a2c 100%);
+  box-shadow: inset 0 4px 8px rgb(90 18 0 / 0.65), inset 0 0 0 1px rgb(110 25 0 / 0.5), 0 -1px 0 rgb(0 0 0 / 0.25),
+    0 1px 0 rgb(255 255 255 / 0.22), 0 0 18px rgb(255 90 31 / 0.35);
 }
 .switch input:checked::after {
-  translate: 46px 0;
+  translate: calc(var(--slot-w) - var(--thumb-w) - 2 * var(--slot-pad)) 0;
+}
+.switch input:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 .switch-label {
   color: var(--text-muted);
@@ -513,19 +554,6 @@ textarea.input {
   font-size: var(--fs-body);
   text-transform: none;
   letter-spacing: 0;
-}
-.switch-row input {
-  width: 64px;
-  height: 34px;
-}
-.switch-row input::after {
-  top: 3px;
-  left: 3px;
-  width: 28px;
-  height: 28px;
-}
-.switch-row input:checked::after {
-  translate: 30px 0;
 }
 
 /* ============ slider ============ */
@@ -950,36 +978,19 @@ textarea.input {
 /* ============ pagination ============ */
 .pagination {
   display: flex;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 .page-btn {
   display: grid;
   place-items: center;
-  width: 36px;
-  height: 36px;
-  padding: 0;
-  border: 0;
-  border-radius: var(--r-sm);
-  background: var(--gloss), linear-gradient(180deg, #4d4b4b, #3d3c3c);
-  color: var(--text);
+  width: var(--key-h);
   font-size: var(--fs-small);
-  box-shadow: var(--shadow-dark-key);
-  text-shadow: var(--engrave);
-  cursor: pointer;
-}
-.page-btn:active {
-  transform: translateY(2px);
-  box-shadow: var(--shadow-pressed);
+  font-weight: 500;
 }
 .page-btn .icon {
   width: 20px;
   height: 20px;
-}
-.page-btn[aria-current='page'] {
-  background: var(--gloss), linear-gradient(180deg, #f25a24, #dd4915);
-  color: #fff;
-  box-shadow: var(--shadow-accent);
-  text-shadow: 0 -1px 0 rgb(110 25 0 / 0.4);
 }
 
 /* ============ avatar ============ */
@@ -1065,6 +1076,6 @@ textarea.input {
 }
 .modal-actions .btn {
   flex: 1;
-  min-height: 36px;
-  padding: 0 var(--space-3);
+  padding-inline: calc(var(--space-2) + var(--skirt-l)) calc(var(--space-2) + var(--skirt-r));
+  font-size: var(--fs-small);
 }
