@@ -26,7 +26,11 @@
       <section id="send" class="panel panel-screws" role="tabpanel">
         <h2 class="eyebrow"><label for="text">Message</label></h2>
         <textarea id="text" class="input" rows="3" placeholder="blue river quick zoo" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea>
-        <p id="hint" class="field-hint">Type a message. Up to 512 bytes.</p>
+        <p id="hint" class="field-hint">Type a message. Up to 100 bytes.</p>
+        <div class="bands" role="radiogroup" aria-label="Band">
+          <label class="choice"><input type="radio" name="band" value="ultrasound" checked /> Ultrasound (15–19 kHz)</label>
+          <label class="choice"><input type="radio" name="band" value="audible" /> Audible (fallback)</label>
+        </div>
         <label class="switch switch-row"><input id="loop" type="checkbox" /><span>Repeat until stopped</span></label>
         <div class="actions">
           <button id="sendBtn" class="btn btn-primary btn-block" type="button">Send as sound</button>
@@ -49,8 +53,9 @@
       <section id="diag" class="panel panel-screws" role="tabpanel" hidden>
         <h2 class="eyebrow">Diagnostics</h2>
         <dl id="stats" class="stats"></dl>
-        <div id="tones" class="tones" aria-label="Tone levels"></div>
-        <p class="field-hint">Start listening on the Receive screen, then play a message from the other device. Two rows of 16 bars: each should show one clear peak while a message is playing.</p>
+        <div id="tones" class="tones" aria-label="Live spectrum, 0.5 to 22 kHz"></div>
+        <div class="tones-axis"><span>0.5 kHz</span><span>11 kHz</span><span>22 kHz</span></div>
+        <p class="field-hint">Live microphone spectrum. Start listening on the Receive screen, then send from the other device: while an ultrasound message plays, the highlighted bars (15–19.5 kHz) should rise. If they stay flat, this phone's microphone is not capturing the band; switch both devices to Audible.</p>
       </section>
     </main>
     <script type="module" src="/src/ui/main.ts"></script>

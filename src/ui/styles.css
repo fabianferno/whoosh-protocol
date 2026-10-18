@@ -135,8 +135,8 @@ section[hidden] {
 
 .tones {
   display: grid;
-  grid-template-columns: repeat(16, 1fr);
-  gap: 3px;
+  grid-template-columns: repeat(44, 1fr);
+  gap: 1px;
   height: 128px;
   align-items: end;
   padding: var(--space-2);
@@ -158,3 +158,7 @@ section[hidden] {
   background: linear-gradient(0deg, var(--orange-lo), var(--accent) 50%, #ffb27f);
   filter: drop-shadow(0 0 3px rgb(255 90 31 / 0.8));
 }
+
+.bands { display: grid; gap: var(--space-2); margin: var(--space-3) 0; }
+.bar.us { background: rgb(255 90 31 / 0.16); }
+.tones-axis { display: flex; justify-content: space-between; margin-top: var(--space-1); color: var(--text-subtle); font-size: var(--fs-small); }

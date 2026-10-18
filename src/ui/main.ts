@@ -1,10 +1,8 @@
 import './styles.css';
-import { Receiver, type ReceiverEvent } from '../app/receiver.ts';
-import { prepareSend, SEND_RATE, type PreparedSend } from '../app/sender.ts';
 import { CaptureError, startCapture, type Capture } from '../audio/capture.ts';
 import { playSamples, type Playback } from '../audio/player.ts';
-import { MessageError } from '../message/message.ts';
-import { TONE_COUNT, GROUPS } from '../modem/params.ts';
+import { encodeText, MAX_BYTES, TextDecoderStream, TooLongError, TX_RATE, type Band } from '../audio/ggwave.ts';
+import { BAR_HZ, barLevels } from '../audio/spectrum.ts';
 import { mountKeys } from './design/keys.ts';
 
 mountKeys();
@@ -26,40 +24,45 @@ const sendBtn = $<HTMLButtonElement>('sendBtn');
 const sendStatus = $('sendStatus');
 const loop = $<HTMLInputElement>('loop');
 
-let prepared: PreparedSend | null = null;
-let preparedFor = '';
+const band = (): Band => document.querySelector<HTMLInputElement>('input[name=band]:checked')!.value as Band;
+const byteLength = (s: string) => new TextEncoder().encode(s).length;
+
+let prepared: { key: string; samples: Float32Array } | null = null;
 let playback: Playback | null = null;
 let sending = false;
 
-function prepare(): PreparedSend | null {
-  if (prepared && preparedFor === text.value) return prepared;
+/** Encodes the current text; resolves null (and explains why in the hint) if it cannot be sent. */
+async function prepare(): Promise<Float32Array | null> {
+  const key = `${band()}|${text.value}`;
+  if (prepared?.key === key) return prepared.samples;
+  prepared = null;
+  const bytes = byteLength(text.value);
+  if (text.value.trim() === '') {
+    hint.textContent = `Type a message. Up to ${MAX_BYTES} bytes.`;
+    return null;
+  }
   try {
-    prepared = prepareSend(text.value);
-    preparedFor = text.value;
-    return prepared;
+    const samples = await encodeText(text.value, band());
+    prepared = { key, samples };
+    hint.textContent = `${bytes} / ${MAX_BYTES} bytes · about ${(samples.length / TX_RATE).toFixed(1)} s`;
+    return samples;
   } catch (error) {
-    prepared = null;
-    if (!(error instanceof MessageError)) throw error;
-    hint.textContent = error.code === 'empty' ? 'Type a message. Up to 512 bytes.' : error.message;
+    hint.textContent = error instanceof TooLongError ? `Too long: ${error.message}` : (error as Error).message;
     return null;
   }
 }
 
 let timer = 0;
-text.addEventListener('input', () => {
+const schedulePrepare = () => {
   clearTimeout(timer);
-  timer = window.setTimeout(() => {
-    const p = prepare();
-    if (p) {
-      const kind = p.mode === 'dict' ? 'dictionary mode' : 'text';
-      hint.textContent = `${kind}, ${p.chunks} ${p.chunks === 1 ? 'burst' : 'bursts'}, about ${p.seconds.toFixed(1)} s`;
-    }
-  }, 150);
-});
+  timer = window.setTimeout(() => void prepare(), 150);
+};
+text.addEventListener('input', schedulePrepare);
+document.querySelectorAll('input[name=band]').forEach((r) => r.addEventListener('change', schedulePrepare));
 
 async function runSend(): Promise<void> {
-  const p = prepare();
-  if (!p) {
+  const samples = await prepare();
+  if (!samples) {
     sendStatus.textContent = text.value.trim() === '' ? 'Type a message first.' : hint.textContent;
     return;
   }
@@ -68,7 +71,7 @@ async function runSend(): Promise<void> {
   sendStatus.textContent = 'Playing. Hold the speaker near the other device and turn the volume up.';
   try {
     do {
-      playback = playSamples(p.samples, SEND_RATE);
+      playback = playSamples(samples, TX_RATE);
       await playback.done;
       if (sending && loop.checked) await new Promise((r) => setTimeout(r, 500));
     } while (sending && loop.checked);
@@ -92,10 +95,11 @@ sendBtn.addEventListener('click', () => {
 });
 
 $('beepBtn').addEventListener('click', () => {
-  const beep = new Float32Array(SEND_RATE);
-  for (let i = 0; i < beep.length; i++) beep[i] = 0.5 * Math.sin((2 * Math.PI * 2500 * i) / SEND_RATE);
-  sendStatus.textContent = 'Playing a 1 second beep at 2.5 kHz. If you cannot hear it, the speaker path is the problem.';
-  playSamples(beep, SEND_RATE).done.catch((error: Error) => (sendStatus.textContent = error.message));
+  const hz = band() === 'ultrasound' ? 18000 : 2500;
+  const beep = new Float32Array(TX_RATE);
+  for (let i = 0; i < beep.length; i++) beep[i] = 0.5 * Math.sin((2 * Math.PI * hz * i) / TX_RATE);
+  sendStatus.textContent = `Playing a 1 second beep at ${hz / 1000} kHz.`;
+  playSamples(beep, TX_RATE).done.catch((error: Error) => (sendStatus.textContent = error.message));
 });
 
 // ---- receive ----
@@ -105,39 +109,39 @@ const recvStatus = $('recvStatus');
 const inbox = $<HTMLUListElement>('inbox');
 
 let capture: Capture | null = null;
-let receiver: Receiver | null = null;
+let decoder: TextDecoderStream | null = null;
+let bars: number[] = new Array(BAR_HZ.length).fill(0);
+let decoded = 0;
 
-function handle(events: ReceiverEvent[]): void {
-  for (const event of events) {
-    if (event.kind === 'progress' && event.progress.received < event.progress.total) {
-      recvStatus.textContent = `Receiving: ${event.progress.received} of ${event.progress.total} bursts`;
-    } else if (event.kind === 'message') {
-      const li = document.createElement('li');
-      const body = document.createElement('p');
-      body.textContent = event.text;
-      const meta = document.createElement('small');
-      meta.textContent = `${new Date().toLocaleTimeString()} · ${event.dictionary ? 'dictionary' : 'text'}`;
-      li.append(body, meta);
-      inbox.prepend(li);
-      // One message per listen: stop the microphone as soon as it has arrived.
-      stopListening();
-      recvStatus.textContent = 'Message received. Tap Start listening for another.';
-      return;
-    }
-  }
+function show(message: string): void {
+  decoded++;
+  const li = document.createElement('li');
+  const body = document.createElement('p');
+  body.textContent = message;
+  const meta = document.createElement('small');
+  meta.textContent = new Date().toLocaleTimeString();
+  li.append(body, meta);
+  inbox.prepend(li);
+  // One message per listen: stop the microphone as soon as it has arrived.
+  stopListening();
+  recvStatus.textContent = 'Message received. Tap Start listening for another.';
 }
 
 function onSamples(samples: Float32Array): void {
   let sum = 0;
   for (const v of samples) sum += v * v;
   level.style.width = `${Math.min(100, Math.sqrt(sum / samples.length) * 400)}%`;
-  if (receiver) handle(receiver.push(samples));
+  if (capture) bars = barLevels(samples, capture.rate);
+  const message = decoder?.push(samples);
+  if (message) show(message);
 }
 
 function stopListening(): void {
   capture?.stop();
   capture = null;
-  receiver = null;
+  decoder?.free();
+  decoder = null;
+  bars = bars.map(() => 0);
   level.style.width = '0%';
   listenBtn.textContent = 'Start listening';
   recvStatus.textContent = 'Not listening.';
@@ -152,10 +156,12 @@ listenBtn.addEventListener('click', async () => {
   try {
     const started = await startCapture(onSamples);
     capture = started;
-    receiver = new Receiver(started.rate);
+    decoder = await TextDecoderStream.create(started.rate);
     listenBtn.textContent = 'Stop listening';
     recvStatus.textContent = 'Listening.';
   } catch (error) {
+    capture?.stop();
+    capture = null;
     recvStatus.textContent = error instanceof CaptureError ? error.message : `Could not start: ${String(error)}`;
   } finally {
     listenBtn.disabled = false;
@@ -166,9 +172,9 @@ listenBtn.addEventListener('click', async () => {
 const stats = $('stats');
 const tones = $('tones');
 tones.append(
-  ...Array.from({ length: TONE_COUNT * GROUPS }, () => {
+  ...BAR_HZ.map((hz) => {
     const bar = document.createElement('div');
-    bar.className = 'bar';
+    bar.className = hz >= 15000 && hz <= 19500 ? 'bar us' : 'bar';
     bar.append(document.createElement('i'));
     return bar;
   }),
@@ -176,12 +182,11 @@ tones.append(
 
 function renderDiagnostics(): void {
   if (!$('diag').hidden) {
-    const s = receiver?.getStats();
+    const ultra = Math.max(0, ...bars.filter((_, i) => BAR_HZ[i] >= 15000 && BAR_HZ[i] <= 19500));
     const rows: [string, string][] = [
       ['Listening', capture ? `yes, ${capture.rate} Hz` : 'no'],
-      ['Last preamble score', s ? s.lastPreambleScore.toFixed(2) : '-'],
-      ['Messages decoded', s ? String(s.framesDecoded) : '-'],
-      ['Bursts rejected', s ? String(s.framesRejected) : '-'],
+      ['Ultrasound band level', capture ? `${Math.round(ultra * 100)}%` : '-'],
+      ['Messages received', String(decoded)],
     ];
     stats.replaceChildren(
       ...rows.flatMap(([k, v]) => {
@@ -192,10 +197,8 @@ function renderDiagnostics(): void {
         return [dt, dd];
       }),
     );
-    const levels = s?.toneLevels ?? [];
-    const peak = Math.max(1e-12, ...levels);
     tones.querySelectorAll<HTMLElement>('.bar i').forEach((bar, i) => {
-      bar.style.height = `${Math.round(((levels[i] ?? 0) / peak) * 100)}%`;
+      bar.style.height = `${Math.round((bars[i] ?? 0) * 100)}%`;
     });
   }
   requestAnimationFrame(renderDiagnostics);
