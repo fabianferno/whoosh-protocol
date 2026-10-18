@@ -16,10 +16,15 @@ const PROTOCOL: Record<Band, string> = {
 
 type Ggwave = Awaited<ReturnType<typeof factory>>;
 let loading: Promise<Ggwave> | null = null;
+let loaded: Ggwave | null = null;
+
+/** Resolves once the WebAssembly module is loaded, so WaveDecoder.createLoaded can be used synchronously. */
+export const ready = (): Promise<unknown> => load();
 
 function load(): Promise<Ggwave> {
   loading ??= factory().then((g) => {
     g.disableLog();
+    loaded = g;
     return g;
   });
   return loading;
@@ -66,12 +71,18 @@ export async function encodeBytes(bytes: Uint8Array, band: Band, volume = 50): P
 }
 
 /** Feeds microphone samples to ggwave; any protocol (audible or ultrasound) is accepted. */
-export class TextDecoderStream {
+export class WaveDecoder {
   private constructor(private readonly g: Ggwave, private readonly instance: number) {}
 
-  static async create(inputRate: number): Promise<TextDecoderStream> {
+  static async create(inputRate: number): Promise<WaveDecoder> {
     const g = await load();
-    return new TextDecoderStream(g, g.init(parameters(g, inputRate)));
+    return new WaveDecoder(g, g.init(parameters(g, inputRate)));
+  }
+
+  /** Synchronous create for after `await ready()`: lets a gate start a fresh decoder the moment it opens. */
+  static createLoaded(inputRate: number): WaveDecoder {
+    if (!loaded) throw new Error('ggwave is not loaded yet; await ready() first');
+    return new WaveDecoder(loaded, loaded.init(parameters(loaded, inputRate)));
   }
 
   /** Returns the payload bytes of a message completed by this chunk, if any. */

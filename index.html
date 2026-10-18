@@ -20,6 +20,7 @@
       <nav class="tabs" role="tablist" aria-label="Screens">
         <button class="tab" role="tab" data-tab="send" aria-selected="true">Send</button>
         <button class="tab" role="tab" data-tab="receive" aria-selected="false">Receive</button>
+        <button class="tab" role="tab" data-tab="group" aria-selected="false">Group</button>
         <button class="tab" role="tab" data-tab="diag" aria-selected="false">Diagnostics</button>
       </nav>
 
@@ -41,6 +42,10 @@
 
       <section id="receive" class="panel panel-screws" role="tabpanel" hidden>
         <h2 class="eyebrow">Receiver</h2>
+        <div class="bands" role="radiogroup" aria-label="Listen on">
+          <label class="choice"><input type="radio" name="rxband" value="ultrasound" checked /> Listen: ultrasound</label>
+          <label class="choice"><input type="radio" name="rxband" value="audible" /> Listen: audible</label>
+        </div>
         <button id="listenBtn" class="btn btn-primary btn-block" type="button">Start listening</button>
         <div class="level">
           <span class="t-label muted">Input level</span>
@@ -48,6 +53,25 @@
         </div>
         <p id="recvStatus" class="status" role="status">Not listening.</p>
         <ul id="inbox" class="inbox"></ul>
+      </section>
+
+      <section id="group" class="panel panel-screws" role="tabpanel" hidden>
+        <h2 class="eyebrow">Group key</h2>
+        <p id="groupStatus" class="status" role="status">No group key on this device.</p>
+        <div id="newKey" hidden>
+          <p class="field-hint">Read these words aloud to people you trust, in person. They are shown only now and never stored; anyone with them can read and forge your group's messages.</p>
+          <p id="keyWords" class="words"></p>
+        </div>
+        <div class="actions">
+          <button id="createBtn" class="btn btn-primary btn-block" type="button">Create new group</button>
+        </div>
+        <h2 class="eyebrow">Join with a passphrase</h2>
+        <textarea id="joinInput" class="input" rows="2" placeholder="six dictionary words, or a 64-character key" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea>
+        <div class="actions">
+          <button id="joinBtn" class="btn btn-secondary btn-block" type="button">Join group</button>
+          <button id="leaveBtn" class="btn btn-secondary btn-block" type="button">Forget key on this device</button>
+        </div>
+        <p class="field-hint">What this does not give you: no forward secrecy (a leaked key decrypts every past message, including any on Arkiv); no sender authentication (any member can forge a message as another); no revocation (removing someone means everyone moves to a new passphrase). Whoosh is not covert: near-ultrasound is visible to any spectrum analyser.</p>
       </section>
 
       <section id="diag" class="panel panel-screws" role="tabpanel" hidden>

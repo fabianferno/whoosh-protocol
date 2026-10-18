@@ -6,9 +6,16 @@ export class CaptureError extends Error {
   }
 }
 
+/** PRD: refuse to run below 44.1 kHz. */
+const MIN_RATE = 44100;
+
 export interface Capture {
   /** Sample rate the browser is actually delivering. */
   rate: number;
+  /** What the browser actually applied (it may ignore what was requested). */
+  settings: MediaTrackSettings;
+  /** True if the browser kept echo cancellation, noise suppression or auto gain on, which distorts tones. */
+  voiceProcessing: boolean;
   stop(): void;
 }
 
@@ -60,6 +67,12 @@ export async function startCapture(onSamples: (samples: Float32Array) => void): 
   }
 
   await ctx.resume();
+  const settings = stream.getAudioTracks()[0]?.getSettings() ?? {};
+  if (ctx.sampleRate < MIN_RATE) {
+    stream.getTracks().forEach((t) => t.stop());
+    void ctx.close();
+    throw new CaptureError('unsupported', `This device captures audio at ${ctx.sampleRate} Hz; Whoosh needs at least ${MIN_RATE} Hz.`);
+  }
   const source = ctx.createMediaStreamSource(stream);
   const mute = ctx.createGain();
   mute.gain.value = 0;
@@ -93,6 +106,8 @@ export async function startCapture(onSamples: (samples: Float32Array) => void): 
 
   return {
     rate: ctx.sampleRate,
+    settings,
+    voiceProcessing: Boolean(settings.echoCancellation || settings.noiseSuppression || settings.autoGainControl),
     stop: () => {
       teardown();
       source.disconnect();

@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { encodeBytes, encodeText, MAX_BYTES, MAX_PACKET_BYTES, TextDecoderStream, TooLongError, TX_RATE, type Band } from '../src/audio/ggwave.ts';
+import { encodeBytes, encodeText, MAX_BYTES, MAX_PACKET_BYTES, WaveDecoder, TooLongError, TX_RATE, type Band } from '../src/audio/ggwave.ts';
 import { openText, sealText } from '../src/packet/codec.ts';
 import { deriveGroupKeys } from '../src/packet/keys.ts';
 import { SenderIdentity } from '../src/packet/session.ts';
 import * as ch from './helpers/channel.ts';
 
 async function receive(x: Float32Array, rate: number, chunk = 4096): Promise<string[]> {
-  const rx = await TextDecoderStream.create(rate);
+  const rx = await WaveDecoder.create(rate);
   try {
     return ch.feed((c) => {
       const text = rx.push(c);
@@ -70,7 +70,7 @@ describe('ggwave carries packets', () => {
     payload[6] = 0xff;
     for (const band of ['ultrasound', 'audible'] as const) {
       const wave = await encodeBytes(payload, band);
-      const rx = await TextDecoderStream.create(TX_RATE);
+      const rx = await WaveDecoder.create(TX_RATE);
       const got = ch.feed((c) => { const b = rx.pushBytes(c); return b ? [b] : []; }, ch.offset(wave, 6000));
       rx.free();
       expect(got).toHaveLength(1);
@@ -82,7 +82,7 @@ describe('ggwave carries packets', () => {
     const keys = await deriveGroupKeys('lunar fossil quick river zoo abandon', 1000);
     const packet = await sealText(keys, new SenderIdentity(), 'meet at the old bridge at noon', 1_790_000_000);
     const wave = ch.addNoise(ch.offset(await encodeBytes(packet, 'ultrasound'), 6000), 6, ch.rng(21));
-    const rx = await TextDecoderStream.create(TX_RATE);
+    const rx = await WaveDecoder.create(TX_RATE);
     const got = ch.feed((c) => { const b = rx.pushBytes(c); return b ? [b] : []; }, wave);
     rx.free();
     expect(got).toHaveLength(1);
