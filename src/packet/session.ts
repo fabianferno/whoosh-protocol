@@ -9,6 +9,11 @@ export class SenderIdentity {
   private sender: number;
   private seq = -1;
 
+  /** The current sender id, so a device can recognise (and not relay) its own packets. It changes if seq wraps. */
+  get senderId(): number {
+    return this.sender;
+  }
+
   constructor(private readonly random: () => number = randomUint32) {
     this.sender = this.random();
   }

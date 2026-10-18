@@ -1,6 +1,7 @@
 import './styles.css';
 import { runLoopback } from '../app/loopback.ts';
 import { estimateSeconds, PacketInbox, prepareSecureSend } from '../app/secure.ts';
+import { Mesh } from '../mesh/mesh.ts';
 import { mountArkivPanel } from './arkivPanel.ts';
 import { CaptureError, startCapture, type Capture } from '../audio/capture.ts';
 import { CarrierGate } from '../audio/gate.ts';
@@ -193,6 +194,12 @@ let decoder: WaveDecoder | null = null;
 let bars: number[] = new Array(BAR_HZ.length).fill(0);
 let decoded = 0;
 let heard = 0;
+let mesh: Mesh | null = null;
+/** True while this device is playing a relay: the microphone hears itself, so input is ignored. */
+let transmitting = false;
+let lastCarrierAt = 0;
+let sawPacketThisOpen = false;
+const relayToggle = $<HTMLInputElement>('relayToggle');
 /** Gate activity this session, shown in Diagnostics. */
 const trace = { opens: 0, closes: 0, fedSeconds: 0, firstOpenSeconds: 0, listenedSeconds: 0, log: [] as string[] };
 const note = (line: string) => { trace.log.push(line); if (trace.log.length > 6) trace.log.shift(); };
@@ -218,18 +225,58 @@ function show(message: string): void {
 async function onPacket(packet: Uint8Array): Promise<void> {
   heard++;
   arkiv.settle(packet);
-  const got = await inboxAll?.accept(packet);
-  if (got) show(got.text);
+  const info = await inboxAll?.inspect(packet);
+  if (!info) return;
+  mesh?.heard(packet, info.header);
+  if (!info.received) return;
+  if (relayToggle.checked) addMessage(info.received.text);
+  else show(info.received.text);
 }
+
+/** Plays a packet this device is relaying, then goes back to listening with a fresh detector. */
+async function relayTransmit(packet: Uint8Array): Promise<void> {
+  transmitting = true;
+  recvStatus.textContent = 'Relaying...';
+  try {
+    const samples = await encodeBytes(packet, radio('rxband'));
+    await playSamples(samples, TX_RATE).done;
+  } finally {
+    transmitting = false;
+    lastCarrierAt = performance.now();
+    if (capture) {
+      gate = new CarrierGate(capture.rate, radio('rxband'));
+      decoder?.free();
+      decoder = null;
+      recvStatus.textContent = 'Listening (relaying).';
+    }
+  }
+}
+
+/** Starts or stops relaying to match the switch, without interrupting listening. */
+function syncMesh(): void {
+  if (!capture || !group || !relayToggle.checked) {
+    mesh?.stop();
+    mesh = null;
+    return;
+  }
+  mesh ??= new Mesh({
+    selfSender: group.identity.senderId,
+    quietFor: (ms) => !transmitting && !gate?.stats.open && performance.now() - lastCarrierAt >= ms,
+    transmit: relayTransmit,
+  });
+  recvStatus.textContent = 'Listening (relaying).';
+}
+relayToggle.addEventListener('change', syncMesh);
 
 function onSamples(samples: Float32Array): void {
   let sum = 0;
   for (const v of samples) sum += v * v;
   level.style.width = `${Math.min(100, Math.sqrt(sum / samples.length) * 400)}%`;
-  if (!capture || !gate) return;
+  if (!capture || !gate || transmitting) return;
   bars = barLevels(samples, capture.rate);
   trace.listenedSeconds += samples.length / capture.rate;
   const result = gate.push(samples);
+  if (gate.stats.open) lastCarrierAt = performance.now();
   if (result.audio) trace.fedSeconds += result.audio.length / capture.rate;
   if (result.opened) { trace.opens++; note(`open @${trace.listenedSeconds.toFixed(1)}s`); }
   if (result.closed) { trace.closes++; note(`close @${trace.listenedSeconds.toFixed(1)}s`); }
@@ -237,16 +284,25 @@ function onSamples(samples: Float32Array): void {
   if (result.opened) {
     decoder?.free();
     decoder = WaveDecoder.createLoaded(capture.rate);
+    sawPacketThisOpen = false;
     recvStatus.textContent = 'Signal detected...';
   }
   if (result.audio && decoder) {
     const packet = decoder.pushBytes(result.audio);
-    if (packet) void onPacket(packet);
+    if (packet) {
+      sawPacketThisOpen = true;
+      void onPacket(packet);
+    }
   }
-  if (result.closed && recvStatus.textContent === 'Signal detected...') recvStatus.textContent = 'Listening.';
+  // A carrier that ended without a decodable packet means someone collided: back off harder.
+  if (result.closed && !sawPacketThisOpen) mesh?.collision();
+  if (result.closed && recvStatus.textContent === 'Signal detected...') recvStatus.textContent = mesh ? 'Listening (relaying).' : 'Listening.';
 }
 
 function stopListening(): void {
+  mesh?.stop();
+  mesh = null;
+  transmitting = false;
   capture?.stop();
   capture = null;
   gate = null;
@@ -274,10 +330,12 @@ listenBtn.addEventListener('click', async () => {
     const started = await startCapture(onSamples);
     capture = started;
     gate = new CarrierGate(started.rate, radio('rxband'));
+    lastCarrierAt = performance.now();
     listenBtn.textContent = 'Stop listening';
     recvStatus.textContent = started.voiceProcessing
       ? 'Listening, but the browser kept voice processing on, which can distort the signal.'
       : 'Listening.';
+    syncMesh();
   } catch (error) {
     capture?.stop();
     capture = null;
@@ -351,6 +409,7 @@ function renderDiagnostics(): void {
       ['Gate opens / closes', `${trace.opens} / ${trace.closes}`],
       ['Audio fed to decoder', `${trace.fedSeconds.toFixed(1)} s of ${trace.listenedSeconds.toFixed(1)} s`],
       ['Gate log', trace.log.join(', ') || '-'],
+      ['Relay (sent / skipped / deferred)', mesh ? `${mesh.stats.relayed} / ${mesh.stats.suppressed} / ${mesh.stats.deferred}` : 'off'],
       ['Packets heard', String(heard)],
       ['Messages received', String(decoded)],
     ];

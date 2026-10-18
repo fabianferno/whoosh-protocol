@@ -49,13 +49,21 @@ export class PacketInbox {
   }
 
   async accept(packet: Uint8Array, now = nowSeconds()): Promise<Received | null> {
+    return (await this.inspect(packet, now))?.received ?? null;
+  }
+
+  /**
+   * Like accept, but also reports authentic repeats, which the mesh needs to count: `received` is set only
+   * the first time a message id is seen. Null for anything not authentic for this group.
+   */
+  async inspect(packet: Uint8Array, now = nowSeconds()): Promise<{ header: Header; mid: string; received: Received | null } | null> {
     if (!(await isForChannel(this.keys, packet, now))) return null;
     const opened = await openText(this.keys, packet);
     if (!opened) return null;
     const mid = messageIdHex(opened.header);
-    if (this.seen.has(mid)) return null;
+    if (this.seen.has(mid)) return { header: opened.header, mid, received: null };
     this.seen.add(mid);
     if (this.seen.size > this.maxSeen) this.seen.delete(this.seen.values().next().value!);
-    return { text: opened.text, header: opened.header, mid };
+    return { header: opened.header, mid, received: { text: opened.text, header: opened.header, mid } };
   }
 }
