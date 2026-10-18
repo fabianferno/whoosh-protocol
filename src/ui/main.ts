@@ -1,4 +1,5 @@
 import './styles.css';
+import { runLoopback } from '../app/loopback.ts';
 import { estimateSeconds, PacketInbox, prepareSecureSend } from '../app/secure.ts';
 import { mountArkivPanel } from './arkivPanel.ts';
 import { CaptureError, startCapture, type Capture } from '../audio/capture.ts';
@@ -301,6 +302,30 @@ const arkiv = mountArkivPanel({
     if (got) addMessage(got.text);
   },
   replay,
+});
+
+// ---- loopback self-test ----
+const loopbackBtn = $<HTMLButtonElement>('loopbackBtn');
+loopbackBtn.addEventListener('click', async () => {
+  loopbackBtn.disabled = true;
+  $('loopbackLog').replaceChildren();
+  const cases: [Band, number | null][] = [['ultrasound', null], ['ultrasound', 0], ['audible', null], ['audible', 0]];
+  try {
+    for (const [band, snr] of cases) {
+      const r = await runLoopback('hello from the loopback test', band, snr);
+      const li = document.createElement('li');
+      const p = document.createElement('p');
+      p.textContent = `${r.ok ? 'PASS' : 'FAIL'}  ${band}, ${snr === null ? 'clean' : `${snr} dB SNR`}`;
+      const small = document.createElement('small');
+      small.textContent = r.ok
+        ? `${r.packetBytes} byte packet, ${r.seconds.toFixed(1)} s of sound, decrypted: "${r.received}"`
+        : `Failed: ${r.failure ?? 'unknown'}`;
+      li.append(p, small);
+      $('loopbackLog').append(li);
+    }
+  } finally {
+    loopbackBtn.disabled = false;
+  }
 });
 
 // ---- diagnostics ----

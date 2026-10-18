@@ -97,6 +97,12 @@
         <dl id="stats" class="stats"></dl>
         <div id="tones" class="tones" aria-label="Live spectrum, 0.5 to 22 kHz"></div>
         <div class="tones-axis"><span>0.5 kHz</span><span>11 kHz</span><span>22 kHz</span></div>
+        <h2 class="eyebrow">Loopback self-test</h2>
+        <p class="field-hint">No second device? This encrypts a message, turns it into sound, adds noise, and runs it through the same detector, decoder and decryption the app uses when listening. It needs no microphone or speaker.</p>
+        <div class="actions">
+          <button id="loopbackBtn" class="btn btn-secondary btn-block" type="button">Run loopback self-test</button>
+        </div>
+        <ul id="loopbackLog" class="inbox"></ul>
         <p class="field-hint">Live microphone spectrum. Start listening on the Receive screen, then send from the other device: while an ultrasound message plays, the highlighted bars (15–19.5 kHz) should rise. If they stay flat, this phone's microphone is not capturing the band; switch both devices to Audible.</p>
       </section>
     </main>

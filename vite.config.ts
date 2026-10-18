@@ -2,7 +2,11 @@ import basicSsl from '@vitejs/plugin-basic-ssl';
 import { VitePWA } from 'vite-plugin-pwa';
 import { defineConfig } from 'vitest/config';
 
+declare const process: { env: Record<string, string | undefined> };
+
 export default defineConfig({
+  // GitHub Pages serves a project site from /<repo>/; the workflow sets BASE_PATH. Locally it is /.
+  base: process.env.BASE_PATH ?? '/',
   plugins: [
     // The microphone needs a secure context; this serves the dev/preview server over https on the LAN.
     basicSsl(),
