@@ -4,6 +4,16 @@ Written while building. Each entry says how it was observed. Newest first.
 
 ## 2026-10-18
 
+0. **The faucet ran dry on the last day, and its error does not say so.** Claiming from `hub.arkiv.network/faucet` failed with a raw
+   viem error: `insufficient funds for gas * price + value: have 9995400999990802000 want 10000000000000000000`. Checking the
+   chain explains it: the faucet's funding wallet (`0x815Ad950ae49102952C10ceBB18901E9e28AC712`) held 9.9954 GLM after 219
+   transactions, and each claim sends 10 GLM, so it could not pay anyone (`eth_getBalance` and `eth_getTransactionCount`,
+   2026-10-18 about 18:45 IST). Three problems: (a) there is no other documented source of test GLM (the Tiramisu docs
+   page lists only this faucet), and Entities cannot be created without it; (b) the message labels the amount `10 ETH` though the
+   token is GLM; (c) a claim that cannot be paid is not distinguished from a transient error, so the user is left guessing.
+   A smaller per-claim amount, a visible balance, or a "faucet empty" message would help. Whoosh needs about a dozen
+   small transactions for a demo, not 10 GLM.
+
 1. **`@arkiv-network/sdk@0.8.1` README points at files the package does not ship.** It says "Sample code can also be found in the
    `sample` directory" and links `BUILD.md` and `CONTRIBUTING.md`. The published tarball contains only `LICENSE.md`, `README.md`,
    `dist/`, `src/` and `package.json` (`npm pack`, then `ls`). The samples are the fastest way to learn the API, so a builder
