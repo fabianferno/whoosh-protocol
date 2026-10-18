@@ -38,8 +38,8 @@ export interface Opened {
  * header (15) | AES-256-GCM ciphertext | tag (12). The header is the associated data (ttl zeroed) and
  * supplies the nonce.
  *
- * The nonce includes the fragment byte, so fragments of one message may share sender, seq and ts. Sealing
- * twice with the same nonce under one key throws.
+ * Each fragment of a message must take a fresh seq: the nonce is sender | seq | ts | 0x0000 (PRD), so reusing
+ * one under AES-GCM would leak plaintext. Sealing twice with the same nonce under one key throws.
  */
 export async function seal(keys: GroupKeys, p: SealParams, plaintext: Uint8Array<ArrayBuffer>): Promise<Uint8Array<ArrayBuffer>> {
   if (plaintext.length > MAX_PLAINTEXT_BYTES) throw new Error(`Message is ${plaintext.length} bytes; the limit is ${MAX_PLAINTEXT_BYTES}`);

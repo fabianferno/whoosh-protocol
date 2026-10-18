@@ -139,25 +139,30 @@ describe('rejects anything that is not authentic', () => {
 describe('nonce safety', () => {
   const base = { type: PacketType.MSG, sender: 0x0badf00d, ts: NOW, fragCount: 2 } as const;
 
-  it('gives each fragment of a message its own keystream', async () => {
-    const p0 = text('A'.repeat(40));
-    const p1 = text('B'.repeat(40));
-    const f0 = await seal(keys, { ...base, seq: 500, fragIndex: 0 }, p0);
-    const f1 = await seal(keys, { ...base, seq: 500, fragIndex: 1 }, p1);
-    const c0 = f0.slice(HEADER_BYTES, HEADER_BYTES + 40);
-    const c1 = f1.slice(HEADER_BYTES, HEADER_BYTES + 40);
-    // A shared nonce means a shared keystream, so c0 xor c1 would equal p0 xor p1 and leak both texts.
-    expect(c0.every((v, i) => (v ^ c1[i]) === (p0[i] ^ p1[i]))).toBe(false);
-    expect(nonceOf(f0)).not.toEqual(nonceOf(f1));
+  it('keeps the PRD nonce: sender | seq | ts | 0x0000, whatever the fragment index', () => {
+    const h = (fragIndex: number) =>
+      packHeader({ type: PacketType.MSG, ttl: 3, flags: 1, chan: 9, sender: 0x01020304, seq: 5, fragIndex, fragCount: 4, ts: 0x0a0b0c0d });
+    expect([...nonceOf(h(0))]).toEqual([1, 2, 3, 4, 0, 5, 0x0a, 0x0b, 0x0c, 0x0d, 0, 0]);
+    expect(nonceOf(h(3))).toEqual(nonceOf(h(0)));
   });
 
-  it('opens every fragment of a message that shares sender, seq and timestamp', async () => {
+  it('refuses a second fragment under the same seq, because it would reuse the keystream', async () => {
+    await seal(keys, { ...base, seq: 500, fragIndex: 0 }, text('A'.repeat(40)));
+    await expect(seal(keys, { ...base, seq: 500, fragIndex: 1 }, text('B'.repeat(40)))).rejects.toThrow(/nonce/i);
+  });
+
+  it('opens every fragment when each takes a fresh seq from the identity', async () => {
+    const id = new SenderIdentity();
+    const seqs = new Set<number>();
     for (let i = 0; i < 4; i++) {
-      const packet = await seal(keys, { ...base, seq: 501, fragIndex: i, fragCount: 4 }, text(`part ${i}`));
+      const { sender, seq } = id.next();
+      seqs.add(seq);
+      const packet = await seal(keys, { ...base, sender, seq, fragIndex: i, fragCount: 4 }, text(`part ${i}`));
       const opened = await open(keys, packet);
       expect(new TextDecoder().decode(opened!.plaintext)).toBe(`part ${i}`);
       expect(opened!.header.fragIndex).toBe(i);
     }
+    expect(seqs.size).toBe(4);
   });
 
   it('refuses to seal twice under the same nonce with one key', async () => {
