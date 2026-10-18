@@ -94,3 +94,16 @@ describe('ggwave carries packets', () => {
     await expect(encodeBytes(new Uint8Array(MAX_PACKET_BYTES + 1), 'audible')).rejects.toBeInstanceOf(TooLongError);
   });
 });
+
+describe('WaveDecoder accepts any chunk size', () => {
+  it.each([128, 480, 960, 1000, 1023, 1025, 3840, 4320, 48000])('decodes with %i-sample chunks', async (size) => {
+    const packet = Uint8Array.from({ length: 52 }, (_, i) => (i * 37 + 5) & 0xff);
+    const wave = await encodeBytes(packet, 'ultrasound');
+    const x = ch.offset(wave, TX_RATE * 2);
+    const rx = await WaveDecoder.create(TX_RATE);
+    const got = ch.feed((c) => { const b = rx.pushBytes(c); return b ? [b] : []; }, x, size);
+    rx.free();
+    expect(got).toHaveLength(1);
+    expect([...got[0]]).toEqual([...packet]);
+  });
+});

@@ -185,6 +185,9 @@ let packets: PacketInbox | null = null;
 let bars: number[] = new Array(BAR_HZ.length).fill(0);
 let decoded = 0;
 let heard = 0;
+/** Gate activity this session, shown in Diagnostics. */
+const trace = { opens: 0, closes: 0, fedSeconds: 0, firstOpenSeconds: 0, listenedSeconds: 0, log: [] as string[] };
+const note = (line: string) => { trace.log.push(line); if (trace.log.length > 6) trace.log.shift(); };
 
 function show(message: string): void {
   decoded++;
@@ -212,7 +215,11 @@ function onSamples(samples: Float32Array): void {
   level.style.width = `${Math.min(100, Math.sqrt(sum / samples.length) * 400)}%`;
   if (!capture || !gate) return;
   bars = barLevels(samples, capture.rate);
+  trace.listenedSeconds += samples.length / capture.rate;
   const result = gate.push(samples);
+  if (result.audio) trace.fedSeconds += result.audio.length / capture.rate;
+  if (result.opened) { trace.opens++; note(`open @${trace.listenedSeconds.toFixed(1)}s`); }
+  if (result.closed) { trace.closes++; note(`close @${trace.listenedSeconds.toFixed(1)}s`); }
   // A fresh decoder each time the gate opens, so state from earlier noise never leaks into a message.
   if (result.opened) {
     decoder?.free();
@@ -289,6 +296,9 @@ function renderDiagnostics(): void {
       ['Voice processing', capture ? (capture.voiceProcessing ? 'ON (bad)' : 'off') : '-'],
       ['Detector gate', g ? (g.open ? 'open' : 'closed') : '-'],
       ['Band / floor / guard', g ? `${g.bandDb.toFixed(0)} / ${g.floorDb.toFixed(0)} / ${g.guardDb.toFixed(0)} dB` : '-'],
+      ['Gate opens / closes', `${trace.opens} / ${trace.closes}`],
+      ['Audio fed to decoder', `${trace.fedSeconds.toFixed(1)} s of ${trace.listenedSeconds.toFixed(1)} s`],
+      ['Gate log', trace.log.join(', ') || '-'],
       ['Packets heard', String(heard)],
       ['Messages received', String(decoded)],
     ];

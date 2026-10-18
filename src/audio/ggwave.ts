@@ -71,7 +71,16 @@ export async function encodeBytes(bytes: Uint8Array, band: Band, volume = 50): P
 }
 
 /** Feeds microphone samples to ggwave; any protocol (audible or ultrasound) is accepted. */
+/**
+ * ggwave 0.4.0 only decodes when each call gets a whole number of 1024-sample frames; any other size
+ * returns nothing. Callers push whatever size they have, so the remainder is carried to the next call.
+ */
+const FRAME = 1024;
+const MAX_CALL = 4 * FRAME;
+
 export class WaveDecoder {
+  private carry = new Float32Array(0);
+
   private constructor(private readonly g: Ggwave, private readonly instance: number) {}
 
   static async create(inputRate: number): Promise<WaveDecoder> {
@@ -87,9 +96,20 @@ export class WaveDecoder {
 
   /** Returns the payload bytes of a message completed by this chunk, if any. */
   pushBytes(samples: Float32Array): Uint8Array | null {
-    const bytes = new Int8Array(samples.buffer, samples.byteOffset, samples.byteLength);
-    const out = this.g.decode(this.instance, bytes);
-    return out.length > 0 ? Uint8Array.from(out) : null;
+    const joined = new Float32Array(this.carry.length + samples.length);
+    joined.set(this.carry);
+    joined.set(samples, this.carry.length);
+    let at = 0;
+    let found: Uint8Array | null = null;
+    while (joined.length - at >= FRAME) {
+      const n = Math.min(MAX_CALL, Math.floor((joined.length - at) / FRAME) * FRAME);
+      const slice = joined.subarray(at, at + n);
+      const out = this.g.decode(this.instance, new Int8Array(slice.buffer, slice.byteOffset, slice.byteLength));
+      if (out.length > 0 && !found) found = Uint8Array.from(out);
+      at += n;
+    }
+    this.carry = joined.slice(at);
+    return found;
   }
 
   /** Like pushBytes, decoded as UTF-8 text. */

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CarrierGate } from '../src/audio/gate.ts';
-import { encodeBytes, WaveDecoder, TX_RATE, type Band } from '../src/audio/ggwave.ts';
+import { encodeBytes, ready, WaveDecoder, TX_RATE, type Band } from '../src/audio/ggwave.ts';
 import * as ch from './helpers/channel.ts';
 
 const RATE = TX_RATE;
@@ -146,5 +146,46 @@ describe('CarrierGate at 44.1 kHz', () => {
     const got = await decode(r.audio, 44100);
     expect(got).toHaveLength(1);
     expect([...got[0]]).toEqual([...payload]);
+  });
+});
+
+describe('gate feeding a decoder exactly as the app does', () => {
+  /** Mic chunk -> gate -> fresh decoder on open -> push each gated piece at once. */
+  async function live(x: Float32Array, band: Band, rate = RATE, chunk = 4096): Promise<Uint8Array[]> {
+    await ready();
+    const gate = new CarrierGate(rate, band);
+    let decoder: WaveDecoder | null = null;
+    const packets: Uint8Array[] = [];
+    for (let i = 0; i < x.length; i += chunk) {
+      const r = gate.push(x.subarray(i, Math.min(x.length, i + chunk)));
+      if (r.opened) {
+        decoder?.free();
+        decoder = WaveDecoder.createLoaded(rate);
+      }
+      if (r.audio && decoder) {
+        const p = decoder.pushBytes(r.audio);
+        if (p) packets.push(p);
+      }
+    }
+    decoder?.free();
+    return packets;
+  }
+
+  it.each<Band>(['ultrasound', 'audible'])('decodes a full-length %s packet', async (band) => {
+    const rand = ch.rng(40);
+    const packet = Uint8Array.from({ length: 52 }, (_, i) => (i * 37 + 5) & 0xff);
+    const burst = await encodeBytes(packet, band);
+    const x = concat(noise(3, 0.0005, rand), burst, noise(2, 0.0005, rand));
+    const got = await live(x, band);
+    expect(got).toHaveLength(1);
+    expect([...got[0]]).toEqual([...packet]);
+  });
+
+  it('decodes with an almost silent room (digital-silence-like noise floor)', async () => {
+    const packet = Uint8Array.from({ length: 52 }, (_, i) => (i * 11 + 1) & 0xff);
+    const burst = await encodeBytes(packet, 'ultrasound');
+    const x = concat(new Float32Array(RATE * 3), burst, new Float32Array(RATE * 2));
+    const got = await live(x, 'ultrasound');
+    expect(got).toHaveLength(1);
   });
 });
